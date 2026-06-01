@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -32,11 +33,13 @@ public class AppelDoffresController {
     } */
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public AppelDoffres getAppelDoffres(@PathVariable Long id) {
         return appelDoffresService.getAppelDoffresById(id);
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public AppelDoffres saveAppelDoffres(
             @RequestBody AppelDoffres appelDoffres) {
 
@@ -44,6 +47,7 @@ public class AppelDoffresController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public AppelDoffres updateAppelDoffres(
             @PathVariable Long id,
             @RequestBody AppelDoffres appelDoffres) {
@@ -53,11 +57,13 @@ public class AppelDoffresController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteAppelDoffres(@PathVariable Long id) {
         appelDoffresService.deleteAppelDoffres(id);
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public List<AppelDoffres> searchAO(
             @RequestParam String keyword) {
 
@@ -66,6 +72,7 @@ public class AppelDoffresController {
     }
 
     @GetMapping("/pagination")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public Page<AppelDoffres> getPaginatedAO(
 
             @RequestParam(defaultValue = "0") int page,
@@ -81,6 +88,7 @@ public class AppelDoffresController {
     }
 
     @GetMapping("/pagination-sort")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public Page<AppelDoffres> getPaginatedAndSortedAO(
 
             @RequestParam(defaultValue = "0")
@@ -105,6 +113,7 @@ public class AppelDoffresController {
     }
 
     @GetMapping("/search-multi")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public List<AppelDoffres> searchMulti(
 
             @RequestParam(required = false)
@@ -122,12 +131,14 @@ public class AppelDoffresController {
     }
 
     @GetMapping("/export/csv")
+    @PreAuthorize("hasRole('ADMIN')")
     public String exportCsv() {
 
         return csvExportService.exportAOToCsv();
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public List<AppelDoffresDTO> getAllAO() {
 
         return appelDoffresRepository.findAll()
