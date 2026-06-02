@@ -13,6 +13,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
+import net.bilal.appeldoffresbackend.services.ExcelExportService;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -26,6 +31,7 @@ public class AppelDoffresController {
     private final AppelDoffresRepository appelDoffresRepository;
     private final CsvExportService csvExportService;
     private final AppelDoffresMapper appelDoffresMapper;
+    private final ExcelExportService excelExportService;
 
     /* @GetMapping
     public List<AppelDoffres> getAllAppelsOffres() {
@@ -145,5 +151,27 @@ public class AppelDoffresController {
                 .stream()
                 .map(appelDoffresMapper::fromAppelDoffres)
                 .toList();
+    }
+
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<InputStreamResource> exportExcel() {
+
+        InputStreamResource file =
+                new InputStreamResource(
+                        excelExportService.exportAOToExcel()
+                );
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=appels_offres.xlsx"
+                )
+                .contentType(
+                        MediaType.parseMediaType(
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                )
+                .body(file);
     }
 }
