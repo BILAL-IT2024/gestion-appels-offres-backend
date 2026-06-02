@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ public class DashboardController {
     private final PaiementRepository paiementRepository;
 
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public Map<String, Object> getDashboardStats() {
 
         Map<String, Object> stats = new LinkedHashMap<>();;
@@ -73,6 +75,7 @@ public class DashboardController {
     }
 
     @GetMapping("/alertes/appels-offres")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public List<AppelDoffres> getAOUrgents() {
 
         return appelDoffresRepository
