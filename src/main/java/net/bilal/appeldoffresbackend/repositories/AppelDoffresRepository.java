@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import net.bilal.appeldoffresbackend.dtos.TopAppelOffreDTO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -43,5 +44,19 @@ OR a.statut = :statut)
             String reference,
             String statut
     );
+
+    @Query("""
+    SELECT
+    ao.reference as reference,
+    ao.montantEstime as montant
+
+    FROM AppelDoffres ao
+
+    WHERE ao.reference IS NOT NULL
+    AND ao.montantEstime IS NOT NULL
+
+    ORDER BY ao.montantEstime DESC
+    """)
+    List<TopAppelOffreDTO> getTopAppelsOffres(Pageable pageable);
 
 }

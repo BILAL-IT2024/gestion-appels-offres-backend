@@ -29,19 +29,23 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
         """)
     List<ChiffreAffaireMensuelDTO> getChiffreAffaireMensuel();
 
-    @Query("""
-        SELECT
-        ao.client.raisonSociale as client,
-        SUM(p.montantPaiement) as total
+    @Query(value = """
+    SELECT
+    c.raison_sociale as client,
+    SUM(p.montant_paiement) as total
 
-        FROM Paiement p
-        JOIN p.commande c
-        JOIN c.marche m
-        JOIN m.appelDoffres ao
+    FROM paiement p
+    JOIN commande co ON p.commande_id = co.id
+    JOIN marche m ON co.marche_id = m.id
+    JOIN appel_doffres ao ON m.appel_doffres_id = ao.id
+    JOIN client c ON ao.client_id = c.id
 
-        GROUP BY ao.client.raisonSociale
+    GROUP BY c.raison_sociale
 
-        ORDER BY total DESC
-        """)
+    ORDER BY total DESC
+
+    LIMIT 5
+    """,
+            nativeQuery = true)
     List<TopClientDTO> getTopClients();
 }

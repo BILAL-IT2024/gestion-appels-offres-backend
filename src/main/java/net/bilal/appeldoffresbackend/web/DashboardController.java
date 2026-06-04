@@ -1,14 +1,12 @@
 package net.bilal.appeldoffresbackend.web;
 
 import lombok.RequiredArgsConstructor;
-import net.bilal.appeldoffresbackend.dtos.AlerteAppelOffreDTO;
-import net.bilal.appeldoffresbackend.dtos.DashboardStatsDTO;
+import net.bilal.appeldoffresbackend.dtos.*;
 import net.bilal.appeldoffresbackend.entities.AppelDoffres;
 import net.bilal.appeldoffresbackend.repositories.*;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import net.bilal.appeldoffresbackend.dtos.ChiffreAffaireMensuelDTO;
-import net.bilal.appeldoffresbackend.dtos.TopClientDTO;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -184,5 +182,15 @@ public class DashboardController {
     public List<TopClientDTO> getTopClients() {
 
         return paiementRepository.getTopClients();
+    }
+
+    @GetMapping("/top-appels-offres")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
+    public List<TopAppelOffreDTO> getTopAppelsOffres() {
+
+        return appelDoffresRepository
+                .getTopAppelsOffres(
+                        PageRequest.of(0, 5)
+                );
     }
 }
