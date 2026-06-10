@@ -3,6 +3,8 @@ package net.bilal.appeldoffresbackend.dtos;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 @JsonPropertyOrder({
         "id",
         "reference",
@@ -25,4 +27,12 @@ public class AppelDoffresDTO {
     private String statut;
 
     private String clientNom;
+
+    private LocalDate datePublication;
+
+    private LocalDate dateLimite;
+
+    private Long clientId;
+
+
 }
