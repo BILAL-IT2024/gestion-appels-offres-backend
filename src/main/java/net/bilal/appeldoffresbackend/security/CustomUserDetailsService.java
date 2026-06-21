@@ -33,7 +33,8 @@ public class CustomUserDetailsService
                 appUser.getPassword(),
                 List.of(
                         new SimpleGrantedAuthority(
-                                appUser.getRole()
+                                "ROLE_" + appUser.getRole()
+
                         )
                 )
         );
