@@ -30,6 +30,10 @@ public class MarcheService {
         return marcheRepository.save(marche);
     }
 
+    public List<Marche> rechercherMarches(String keyword) {
+        return marcheRepository.findByNumeroMarcheContainingIgnoreCase(keyword);
+    }
+
     public void deleteMarche(Long id) {
         marcheRepository.deleteById(id);
     }

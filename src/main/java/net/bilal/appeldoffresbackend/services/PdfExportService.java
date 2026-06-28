@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 
 import net.bilal.appeldoffresbackend.entities.AppelDoffres;
 import net.bilal.appeldoffresbackend.repositories.AppelDoffresRepository;
+import net.bilal.appeldoffresbackend.entities.Marche;
+import net.bilal.appeldoffresbackend.repositories.MarcheRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 public class PdfExportService {
 
     private final AppelDoffresRepository appelDoffresRepository;
+    private final MarcheRepository marcheRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -105,4 +108,106 @@ public class PdfExportService {
             );
         }
     }
+
+    public ByteArrayInputStream exportMarchePdf(Long id) {
+
+        try {
+
+            Marche marche =
+                    marcheRepository
+                            .findById(id)
+                            .orElseThrow();
+
+            Document document =
+                    new Document();
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(
+                    document,
+                    out
+            );
+
+            document.open();
+
+            document.add(
+                    new Paragraph(
+                            "FICHE MARCHE"
+                    )
+            );
+
+            document.add(
+                    new Paragraph(" ")
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Numero marche : "
+                                    + marche.getNumeroMarche()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Date debut : "
+                                    + marche.getDateDebut()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Date fin : "
+                                    + marche.getDateFin()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Montant marche : "
+                                    + marche.getMontantMarche()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Taux execution : "
+                                    + marche.getTauxExecution()
+                                    + " %"
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Statut : "
+                                    + marche.getStatut()
+                    )
+            );
+
+            if (marche.getAppelDoffres() != null) {
+
+                document.add(
+                        new Paragraph(
+                                "Appel d'offres : "
+                                        + marche.getAppelDoffres()
+                                        .getReference()
+                        )
+                );
+            }
+
+            document.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur PDF Marche",
+                    e
+            );
+        }
+    }
+
 }
