@@ -5,6 +5,8 @@ import net.bilal.appeldoffresbackend.entities.AppelDoffres;
 import net.bilal.appeldoffresbackend.repositories.AppelDoffresRepository;
 import net.bilal.appeldoffresbackend.entities.Marche;
 import net.bilal.appeldoffresbackend.repositories.MarcheRepository;
+import net.bilal.appeldoffresbackend.entities.Commande;
+import net.bilal.appeldoffresbackend.repositories.CommandeRepository;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -25,6 +27,7 @@ public class ExcelExportService {
 
     private final AppelDoffresRepository appelDoffresRepository;
     private final MarcheRepository marcheRepository;
+    private final CommandeRepository commandeRepository;
 
     public ByteArrayInputStream exportAOToExcel() {
 
@@ -205,6 +208,79 @@ public class ExcelExportService {
 
             throw new RuntimeException(
                     "Erreur export Excel Marches",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportCommandesToExcel() {
+
+        try {
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet = workbook.createSheet("Commandes");
+
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Numero Commande");
+            header.createCell(2).setCellValue("Date Commande");
+            header.createCell(3).setCellValue("Montant");
+            header.createCell(4).setCellValue("Statut");
+            header.createCell(5).setCellValue("Marche");
+
+            List<Commande> list = commandeRepository.findAll();
+
+            int rowNum = 1;
+
+            for (Commande commande : list) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(
+                        commande.getId() != null ? commande.getId() : 0
+                );
+
+                row.createCell(1).setCellValue(
+                        commande.getNumeroCommande() != null ? commande.getNumeroCommande() : ""
+                );
+
+                row.createCell(2).setCellValue(
+                        commande.getDateCommande() != null ? commande.getDateCommande().toString() : ""
+                );
+
+                row.createCell(3).setCellValue(
+                        commande.getMontantCommande() != null ? commande.getMontantCommande() : 0
+                );
+
+                row.createCell(4).setCellValue(
+                        commande.getStatut() != null ? commande.getStatut() : ""
+                );
+
+                row.createCell(5).setCellValue(
+                        commande.getMarche() != null &&
+                                commande.getMarche().getNumeroMarche() != null
+                                ? commande.getMarche().getNumeroMarche()
+                                : ""
+                );
+            }
+
+            for (int i = 0; i < 6; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            workbook.write(out);
+            workbook.close();
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur export Excel Commandes",
                     e
             );
         }

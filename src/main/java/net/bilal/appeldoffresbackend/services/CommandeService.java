@@ -33,6 +33,10 @@ public class CommandeService {
         return commandeRepository.save(commande);
     }
 
+    public List<Commande> rechercherCommandes(String keyword) {
+        return commandeRepository.findByNumeroCommandeContainingIgnoreCase(keyword);
+    }
+
     public void deleteCommande(Long id) {
         commandeRepository.deleteById(id);
     }
