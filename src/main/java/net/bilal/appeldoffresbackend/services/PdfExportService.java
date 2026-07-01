@@ -10,6 +10,8 @@ import net.bilal.appeldoffresbackend.entities.AppelDoffres;
 import net.bilal.appeldoffresbackend.repositories.AppelDoffresRepository;
 import net.bilal.appeldoffresbackend.entities.Marche;
 import net.bilal.appeldoffresbackend.repositories.MarcheRepository;
+import net.bilal.appeldoffresbackend.entities.Commande;
+import net.bilal.appeldoffresbackend.repositories.CommandeRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ public class PdfExportService {
 
     private final AppelDoffresRepository appelDoffresRepository;
     private final MarcheRepository marcheRepository;
+    private final CommandeRepository commandeRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -207,6 +210,51 @@ public class PdfExportService {
                     "Erreur PDF Marche",
                     e
             );
+        }
+    }
+
+    public ByteArrayInputStream exportCommandePdf(Long id) {
+
+        try {
+
+            Commande commande =
+                    commandeRepository
+                            .findById(id)
+                            .orElseThrow();
+
+            Document document = new Document();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(document, out);
+
+            document.open();
+
+            document.add(new Paragraph("FICHE COMMANDE"));
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph(
+                    "Numero commande : " + commande.getNumeroCommande()));
+
+            document.add(new Paragraph(
+                    "Date commande : " + commande.getDateCommande()));
+
+            document.add(new Paragraph(
+                    "Montant : " + commande.getMontantCommande()));
+
+            document.add(new Paragraph(
+                    "Statut : " + commande.getStatut()));
+
+            if (commande.getMarche() != null) {
+                document.add(new Paragraph(
+                        "Marche : " + commande.getMarche().getNumeroMarche()));
+            }
+
+            document.close();
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur PDF Commande", e);
         }
     }
 
