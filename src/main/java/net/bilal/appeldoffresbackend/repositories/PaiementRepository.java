@@ -47,5 +47,9 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     LIMIT 5
     """,
             nativeQuery = true)
+
     List<TopClientDTO> getTopClients();
+
+    List<Paiement> findByReferencePaiementContainingIgnoreCase(String referencePaiement);
+
 }

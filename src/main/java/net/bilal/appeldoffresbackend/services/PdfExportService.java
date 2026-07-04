@@ -12,6 +12,8 @@ import net.bilal.appeldoffresbackend.entities.Marche;
 import net.bilal.appeldoffresbackend.repositories.MarcheRepository;
 import net.bilal.appeldoffresbackend.entities.Commande;
 import net.bilal.appeldoffresbackend.repositories.CommandeRepository;
+import net.bilal.appeldoffresbackend.entities.Paiement;
+import net.bilal.appeldoffresbackend.repositories.PaiementRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,7 @@ public class PdfExportService {
     private final AppelDoffresRepository appelDoffresRepository;
     private final MarcheRepository marcheRepository;
     private final CommandeRepository commandeRepository;
+    private final PaiementRepository paiementRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -255,6 +258,51 @@ public class PdfExportService {
 
         } catch (Exception e) {
             throw new RuntimeException("Erreur PDF Commande", e);
+        }
+    }
+
+    public ByteArrayInputStream exportPaiementPdf(Long id) {
+
+        try {
+
+            Paiement paiement =
+                    paiementRepository
+                            .findById(id)
+                            .orElseThrow();
+
+            Document document = new Document();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(document, out);
+
+            document.open();
+
+            document.add(new Paragraph("FICHE PAIEMENT"));
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph(
+                    "Reference paiement : " + paiement.getReferencePaiement()));
+
+            document.add(new Paragraph(
+                    "Date paiement : " + paiement.getDatePaiement()));
+
+            document.add(new Paragraph(
+                    "Montant paiement : " + paiement.getMontantPaiement()));
+
+            document.add(new Paragraph(
+                    "Mode paiement : " + paiement.getModePaiement()));
+
+            if (paiement.getCommande() != null) {
+                document.add(new Paragraph(
+                        "Commande : " + paiement.getCommande().getNumeroCommande()));
+            }
+
+            document.close();
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur PDF Paiement", e);
         }
     }
 

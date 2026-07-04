@@ -7,6 +7,8 @@ import net.bilal.appeldoffresbackend.entities.Marche;
 import net.bilal.appeldoffresbackend.repositories.MarcheRepository;
 import net.bilal.appeldoffresbackend.entities.Commande;
 import net.bilal.appeldoffresbackend.repositories.CommandeRepository;
+import net.bilal.appeldoffresbackend.entities.Paiement;
+import net.bilal.appeldoffresbackend.repositories.PaiementRepository;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -28,6 +30,7 @@ public class ExcelExportService {
     private final AppelDoffresRepository appelDoffresRepository;
     private final MarcheRepository marcheRepository;
     private final CommandeRepository commandeRepository;
+    private final PaiementRepository paiementRepository;
 
     public ByteArrayInputStream exportAOToExcel() {
 
@@ -281,6 +284,87 @@ public class ExcelExportService {
 
             throw new RuntimeException(
                     "Erreur export Excel Commandes",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportPaiementsToExcel() {
+
+        try {
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet = workbook.createSheet("Paiements");
+
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Reference");
+            header.createCell(2).setCellValue("Date Paiement");
+            header.createCell(3).setCellValue("Montant");
+            header.createCell(4).setCellValue("Mode Paiement");
+            header.createCell(5).setCellValue("Commande");
+
+            List<Paiement> list = paiementRepository.findAll();
+
+            int rowNum = 1;
+
+            for (Paiement paiement : list) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(
+                        paiement.getId() != null ? paiement.getId() : 0
+                );
+
+                row.createCell(1).setCellValue(
+                        paiement.getReferencePaiement() != null
+                                ? paiement.getReferencePaiement()
+                                : ""
+                );
+
+                row.createCell(2).setCellValue(
+                        paiement.getDatePaiement() != null
+                                ? paiement.getDatePaiement().toString()
+                                : ""
+                );
+
+                row.createCell(3).setCellValue(
+                        paiement.getMontantPaiement() != null
+                                ? paiement.getMontantPaiement()
+                                : 0
+                );
+
+                row.createCell(4).setCellValue(
+                        paiement.getModePaiement() != null
+                                ? paiement.getModePaiement()
+                                : ""
+                );
+
+                row.createCell(5).setCellValue(
+                        paiement.getCommande() != null &&
+                                paiement.getCommande().getNumeroCommande() != null
+                                ? paiement.getCommande().getNumeroCommande()
+                                : ""
+                );
+            }
+
+            for (int i = 0; i < 6; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            workbook.write(out);
+            workbook.close();
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur export Excel Paiements",
                     e
             );
         }
