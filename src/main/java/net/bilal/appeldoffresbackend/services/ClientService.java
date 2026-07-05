@@ -30,6 +30,10 @@ public class ClientService {
         return clientRepository.save(client);
     }
 
+    public List<Client> rechercherClients(String keyword) {
+        return clientRepository.findByRaisonSocialeContainingIgnoreCase(keyword);
+    }
+
     public void deleteClient(Long id) {
         clientRepository.deleteById(id);
     }

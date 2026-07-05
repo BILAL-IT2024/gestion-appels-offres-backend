@@ -9,6 +9,8 @@ import net.bilal.appeldoffresbackend.entities.Commande;
 import net.bilal.appeldoffresbackend.repositories.CommandeRepository;
 import net.bilal.appeldoffresbackend.entities.Paiement;
 import net.bilal.appeldoffresbackend.repositories.PaiementRepository;
+import net.bilal.appeldoffresbackend.entities.Client;
+import net.bilal.appeldoffresbackend.repositories.ClientRepository;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -31,6 +33,7 @@ public class ExcelExportService {
     private final MarcheRepository marcheRepository;
     private final CommandeRepository commandeRepository;
     private final PaiementRepository paiementRepository;
+    private final ClientRepository clientRepository;
 
     public ByteArrayInputStream exportAOToExcel() {
 
@@ -367,6 +370,71 @@ public class ExcelExportService {
                     "Erreur export Excel Paiements",
                     e
             );
+        }
+    }
+
+    public ByteArrayInputStream exportClientsToExcel() {
+
+        try {
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Clients");
+
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Raison Sociale");
+            header.createCell(2).setCellValue("Adresse");
+            header.createCell(3).setCellValue("Téléphone");
+            header.createCell(4).setCellValue("Email");
+            header.createCell(5).setCellValue("Type");
+
+            List<Client> list = clientRepository.findAll();
+
+            int rowNum = 1;
+
+            for (Client client : list) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(
+                        client.getId() != null ? client.getId() : 0
+                );
+
+                row.createCell(1).setCellValue(
+                        client.getRaisonSociale() != null ? client.getRaisonSociale() : ""
+                );
+
+                row.createCell(2).setCellValue(
+                        client.getAdresse() != null ? client.getAdresse() : ""
+                );
+
+                row.createCell(3).setCellValue(
+                        client.getTelephone() != null ? client.getTelephone() : ""
+                );
+
+                row.createCell(4).setCellValue(
+                        client.getEmail() != null ? client.getEmail() : ""
+                );
+
+                row.createCell(5).setCellValue(
+                        client.getTypeClient() != null ? client.getTypeClient() : ""
+                );
+            }
+
+            for (int i = 0; i < 6; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            workbook.write(out);
+            workbook.close();
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur export Excel Clients", e);
         }
     }
 

@@ -14,6 +14,8 @@ import net.bilal.appeldoffresbackend.entities.Commande;
 import net.bilal.appeldoffresbackend.repositories.CommandeRepository;
 import net.bilal.appeldoffresbackend.entities.Paiement;
 import net.bilal.appeldoffresbackend.repositories.PaiementRepository;
+import net.bilal.appeldoffresbackend.entities.Client;
+import net.bilal.appeldoffresbackend.repositories.ClientRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,7 @@ public class PdfExportService {
     private final MarcheRepository marcheRepository;
     private final CommandeRepository commandeRepository;
     private final PaiementRepository paiementRepository;
+    private final ClientRepository clientRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -303,6 +306,40 @@ public class PdfExportService {
 
         } catch (Exception e) {
             throw new RuntimeException("Erreur PDF Paiement", e);
+        }
+    }
+
+    public ByteArrayInputStream exportClientPdf(Long id) {
+
+        try {
+
+            Client client =
+                    clientRepository
+                            .findById(id)
+                            .orElseThrow();
+
+            Document document = new Document();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(document, out);
+
+            document.open();
+
+            document.add(new Paragraph("FICHE CLIENT"));
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph("Raison sociale : " + client.getRaisonSociale()));
+            document.add(new Paragraph("Adresse : " + client.getAdresse()));
+            document.add(new Paragraph("Telephone : " + client.getTelephone()));
+            document.add(new Paragraph("Email : " + client.getEmail()));
+            document.add(new Paragraph("Type : " + client.getTypeClient()));
+
+            document.close();
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur PDF Client", e);
         }
     }
 
