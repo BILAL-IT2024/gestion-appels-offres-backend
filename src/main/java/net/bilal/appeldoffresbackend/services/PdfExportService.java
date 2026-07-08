@@ -16,6 +16,8 @@ import net.bilal.appeldoffresbackend.entities.Paiement;
 import net.bilal.appeldoffresbackend.repositories.PaiementRepository;
 import net.bilal.appeldoffresbackend.entities.Client;
 import net.bilal.appeldoffresbackend.repositories.ClientRepository;
+import net.bilal.appeldoffresbackend.entities.Consultation;
+import net.bilal.appeldoffresbackend.repositories.ConsultationRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,7 @@ public class PdfExportService {
     private final CommandeRepository commandeRepository;
     private final PaiementRepository paiementRepository;
     private final ClientRepository clientRepository;
+    private final ConsultationRepository consultationRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -340,6 +343,58 @@ public class PdfExportService {
 
         } catch (Exception e) {
             throw new RuntimeException("Erreur PDF Client", e);
+        }
+    }
+
+    public ByteArrayInputStream exportConsultationPdf(Long id) {
+
+        try {
+
+            Consultation consultation =
+                    consultationRepository
+                            .findById(id)
+                            .orElseThrow();
+
+            Document document = new Document();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(document, out);
+
+            document.open();
+
+            document.add(new Paragraph("FICHE CONSULTATION"));
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph(
+                    "Reference : " + consultation.getReference()));
+
+            document.add(new Paragraph(
+                    "Objet : " + consultation.getObjet()));
+
+            document.add(new Paragraph(
+                    "Date reception : " + consultation.getDateReception()));
+
+            document.add(new Paragraph(
+                    "Montant propose : " + consultation.getMontantPropose()));
+
+            document.add(new Paragraph(
+                    "Statut : " + consultation.getStatut()));
+
+            if (consultation.getClient() != null) {
+                document.add(new Paragraph(
+                        "Client : " + consultation.getClient().getRaisonSociale()));
+            }
+
+            document.close();
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur PDF Consultation",
+                    e
+            );
         }
     }
 

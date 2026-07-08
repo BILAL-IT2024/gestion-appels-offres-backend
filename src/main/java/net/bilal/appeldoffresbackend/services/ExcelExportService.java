@@ -11,6 +11,8 @@ import net.bilal.appeldoffresbackend.entities.Paiement;
 import net.bilal.appeldoffresbackend.repositories.PaiementRepository;
 import net.bilal.appeldoffresbackend.entities.Client;
 import net.bilal.appeldoffresbackend.repositories.ClientRepository;
+import net.bilal.appeldoffresbackend.entities.Consultation;
+import net.bilal.appeldoffresbackend.repositories.ConsultationRepository;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -34,6 +36,7 @@ public class ExcelExportService {
     private final CommandeRepository commandeRepository;
     private final PaiementRepository paiementRepository;
     private final ClientRepository clientRepository;
+    private final ConsultationRepository consultationRepository;
 
     public ByteArrayInputStream exportAOToExcel() {
 
@@ -435,6 +438,94 @@ public class ExcelExportService {
 
         } catch (Exception e) {
             throw new RuntimeException("Erreur export Excel Clients", e);
+        }
+    }
+
+    public ByteArrayInputStream exportConsultationsToExcel() {
+
+        try {
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet = workbook.createSheet("Consultations");
+
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Reference");
+            header.createCell(2).setCellValue("Objet");
+            header.createCell(3).setCellValue("Date Reception");
+            header.createCell(4).setCellValue("Montant");
+            header.createCell(5).setCellValue("Statut");
+            header.createCell(6).setCellValue("Client");
+
+            List<Consultation> list = consultationRepository.findAll();
+
+            int rowNum = 1;
+
+            for (Consultation consultation : list) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(
+                        consultation.getId() != null ? consultation.getId() : 0
+                );
+
+                row.createCell(1).setCellValue(
+                        consultation.getReference() != null
+                                ? consultation.getReference()
+                                : ""
+                );
+
+                row.createCell(2).setCellValue(
+                        consultation.getObjet() != null
+                                ? consultation.getObjet()
+                                : ""
+                );
+
+                row.createCell(3).setCellValue(
+                        consultation.getDateReception() != null
+                                ? consultation.getDateReception().toString()
+                                : ""
+                );
+
+                row.createCell(4).setCellValue(
+                        consultation.getMontantPropose() != null
+                                ? consultation.getMontantPropose()
+                                : 0
+                );
+
+                row.createCell(5).setCellValue(
+                        consultation.getStatut() != null
+                                ? consultation.getStatut()
+                                : ""
+                );
+
+                row.createCell(6).setCellValue(
+                        consultation.getClient() != null &&
+                                consultation.getClient().getRaisonSociale() != null
+                                ? consultation.getClient().getRaisonSociale()
+                                : ""
+                );
+            }
+
+            for (int i = 0; i < 7; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            workbook.write(out);
+            workbook.close();
+
+            return new ByteArrayInputStream(out.toByteArray());
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur export Excel Consultations",
+                    e
+            );
         }
     }
 

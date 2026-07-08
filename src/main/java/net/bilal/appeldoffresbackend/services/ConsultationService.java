@@ -39,4 +39,9 @@ public class ConsultationService {
     public void deleteConsultation(Long id) {
         consultationRepository.deleteById(id);
     }
+
+    public List<Consultation> rechercherConsultations(String keyword) {
+        return consultationRepository.findByReferenceContainingIgnoreCase(keyword);
+    }
+
 }
