@@ -44,6 +44,16 @@ public class DashboardController {
                 consultationRepository.countByStatutIgnoreCase("REFUSEE");
 
         long totalMarches = marcheRepository.count();
+
+        long marchesEnCours =
+                marcheRepository.countByStatutIgnoreCase("EN_COURS");
+
+        long marchesTermines =
+                marcheRepository.countByStatutIgnoreCase("TERMINE");
+
+        double montantTotalMarches =
+                marcheRepository.getMontantTotalMarches();
+
         long totalCommandes = commandeRepository.count();
         long totalPaiements = paiementRepository.count();
 
@@ -127,6 +137,9 @@ public class DashboardController {
                 consultationsEnCours,
                 consultationsRefusees,
                 totalMarches,
+                marchesEnCours,
+                marchesTermines,
+                montantTotalMarches,
                 totalCommandes,
                 totalPaiements,
                 chiffreAffaireTotal,

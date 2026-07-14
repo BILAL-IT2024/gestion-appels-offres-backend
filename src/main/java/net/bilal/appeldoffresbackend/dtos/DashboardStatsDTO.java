@@ -23,6 +23,12 @@ public class DashboardStatsDTO {
 
     private long totalMarches;
 
+    private long marchesEnCours;
+
+    private long marchesTermines;
+
+    private double montantTotalMarches;
+
     private long totalCommandes;
 
     private long totalPaiements;
