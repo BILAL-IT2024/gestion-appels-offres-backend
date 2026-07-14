@@ -15,6 +15,12 @@ public class DashboardStatsDTO {
 
     private long totalConsultations;
 
+    private long consultationsRetenues;
+
+    private long consultationsEnCours;
+
+    private long consultationsRefusees;
+
     private long totalMarches;
 
     private long totalCommandes;

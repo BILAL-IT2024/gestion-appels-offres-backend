@@ -33,6 +33,16 @@ public class DashboardController {
         long totalClients = clientRepository.count();
         long totalAppelsOffres = appelDoffresRepository.count();
         long totalConsultations = consultationRepository.count();
+
+        long consultationsRetenues =
+                consultationRepository.countByStatutIgnoreCase("RETENUE");
+
+        long consultationsEnCours =
+                consultationRepository.countByStatutIgnoreCase("EN_COURS");
+
+        long consultationsRefusees =
+                consultationRepository.countByStatutIgnoreCase("REFUSEE");
+
         long totalMarches = marcheRepository.count();
         long totalCommandes = commandeRepository.count();
         long totalPaiements = paiementRepository.count();
@@ -113,6 +123,9 @@ public class DashboardController {
                 totalClients,
                 totalAppelsOffres,
                 totalConsultations,
+                consultationsRetenues,
+                consultationsEnCours,
+                consultationsRefusees,
                 totalMarches,
                 totalCommandes,
                 totalPaiements,
