@@ -31,6 +31,12 @@ public class DashboardStatsDTO {
 
     private long totalCommandes;
 
+    private long commandesEnCours;
+
+    private long commandesLivrees;
+
+    private double montantTotalCommandes;
+
     private long totalPaiements;
 
     private double chiffreAffaireTotal;

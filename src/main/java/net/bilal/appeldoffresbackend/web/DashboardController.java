@@ -55,6 +55,15 @@ public class DashboardController {
                 marcheRepository.getMontantTotalMarches();
 
         long totalCommandes = commandeRepository.count();
+
+        long commandesEnCours =
+                commandeRepository.countByStatutIgnoreCase("EN_COURS");
+
+        long commandesLivrees =
+                commandeRepository.countByStatutIgnoreCase("LIVREE");
+
+        double montantTotalCommandes =
+                commandeRepository.getMontantTotalCommandes();
         long totalPaiements = paiementRepository.count();
 
         double chiffreAffaireTotal =
@@ -141,6 +150,9 @@ public class DashboardController {
                 marchesTermines,
                 montantTotalMarches,
                 totalCommandes,
+                commandesEnCours,
+                commandesLivrees,
+                montantTotalCommandes,
                 totalPaiements,
                 chiffreAffaireTotal,
                 aoAdjuges,
