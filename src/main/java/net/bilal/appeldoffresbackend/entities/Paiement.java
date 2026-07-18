@@ -27,6 +27,8 @@ public class Paiement {
 
     private String referencePaiement;
 
+    private String statut;
+
     @ManyToOne
     private Commande commande;
 }

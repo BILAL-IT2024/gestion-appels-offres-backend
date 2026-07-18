@@ -39,6 +39,14 @@ public class DashboardStatsDTO {
 
     private long totalPaiements;
 
+    private long paiementsValides;
+
+    private long paiementsEnAttente;
+
+    private long paiementsAnnules;
+
+    private double paiementMoyen;
+
     private double chiffreAffaireTotal;
 
     private long aoAdjuges;

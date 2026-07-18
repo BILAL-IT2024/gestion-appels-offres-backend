@@ -64,7 +64,28 @@ public class DashboardController {
 
         double montantTotalCommandes =
                 commandeRepository.getMontantTotalCommandes();
+
         long totalPaiements = paiementRepository.count();
+
+        long paiementsValides =
+                paiementRepository.countByStatutIgnoreCase("VALIDE");
+
+        long paiementsEnAttente =
+                paiementRepository.countByStatutIgnoreCase("EN_ATTENTE");
+
+        long paiementsAnnules =
+                paiementRepository.countByStatutIgnoreCase("ANNULE");
+
+        double paiementMoyen = 0;
+
+        if (totalPaiements > 0) {
+            paiementMoyen =
+                    paiementRepository.getTotalChiffreAffaire()
+                            / totalPaiements;
+        }
+
+        paiementMoyen =
+                Math.round(paiementMoyen * 100.0) / 100.0;
 
         double chiffreAffaireTotal =
                 paiementRepository.getTotalChiffreAffaire();
@@ -154,6 +175,10 @@ public class DashboardController {
                 commandesLivrees,
                 montantTotalCommandes,
                 totalPaiements,
+                paiementsValides,
+                paiementsEnAttente,
+                paiementsAnnules,
+                paiementMoyen,
                 chiffreAffaireTotal,
                 aoAdjuges,
                 tauxReussite,

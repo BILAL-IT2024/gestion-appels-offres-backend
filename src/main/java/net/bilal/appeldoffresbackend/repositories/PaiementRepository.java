@@ -10,6 +10,8 @@ import java.util.List;
 
 public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
+    long countByStatutIgnoreCase(String statut);
+
     @Query("""
             SELECT COALESCE(SUM(p.montantPaiement),0)
             FROM Paiement p
