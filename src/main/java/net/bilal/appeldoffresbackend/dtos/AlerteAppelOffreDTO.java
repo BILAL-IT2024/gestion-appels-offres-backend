@@ -3,6 +3,7 @@ package net.bilal.appeldoffresbackend.dtos;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import net.bilal.appeldoffresbackend.enums.Das;
 
 import java.time.LocalDate;
 
@@ -22,6 +23,8 @@ public class AlerteAppelOffreDTO {
     private long joursRestants;
 
     private String statut;
+
+    private Das das;
 
     private String etatAlerte;
 }

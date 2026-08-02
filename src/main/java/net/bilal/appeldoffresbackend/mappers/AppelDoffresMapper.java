@@ -14,15 +14,11 @@ public class AppelDoffresMapper {
         dto.setId(ao.getId());
         dto.setReference(ao.getReference());
         dto.setObjet(ao.getObjet());
-        dto.setDatePublication(
-                ao.getDatePublication()
-        );
-
-        dto.setDateLimite(
-                ao.getDateLimite()
-        );
+        dto.setDatePublication(ao.getDatePublication());
+        dto.setDateLimite(ao.getDateLimite());
         dto.setMontantEstime(ao.getMontantEstime());
         dto.setStatut(ao.getStatut());
+        dto.setDas(ao.getDas());
 
         if (ao.getClient() != null) {
 

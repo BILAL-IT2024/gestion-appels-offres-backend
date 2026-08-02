@@ -2,6 +2,7 @@ package net.bilal.appeldoffresbackend.dtos;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
+import net.bilal.appeldoffresbackend.enums.Das;
 
 import java.time.LocalDate;
 
@@ -11,6 +12,7 @@ import java.time.LocalDate;
         "objet",
         "montantEstime",
         "statut",
+        "das",
         "clientNom"
 })
 @Data
@@ -25,6 +27,8 @@ public class AppelDoffresDTO {
     private Double montantEstime;
 
     private String statut;
+
+    private Das das;
 
     private String clientNom;
 

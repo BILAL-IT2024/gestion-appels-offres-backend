@@ -227,6 +227,7 @@ public class DashboardController {
                             ao.getDateLimite(),
                             joursRestants,
                             ao.getStatut(),
+                            ao.getDas(),
                             etatAlerte
                     );
                 })

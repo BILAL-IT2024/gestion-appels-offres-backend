@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import net.bilal.appeldoffresbackend.enums.Das;
 
 import java.time.LocalDate;
 
@@ -30,6 +31,10 @@ public class Marche {
     private Double tauxExecution;
 
     private String statut;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Das das;
 
     @OneToOne
     private AppelDoffres appelDoffres;
