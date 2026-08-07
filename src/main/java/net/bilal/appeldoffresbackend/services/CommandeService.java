@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -115,6 +116,44 @@ public class CommandeService {
 
     public List<Commande> rechercherCommandes(String keyword) {
         return commandeRepository.findByNumeroCommandeContainingIgnoreCase(keyword);
+    }
+
+    public Map<String, Double> getResumeMarche(Long marcheId) {
+
+        Marche marche = marcheRepository
+                .findById(marcheId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Marché introuvable"
+                        )
+                );
+
+        Double totalCommandes =
+                commandeRepository
+                        .getTotalCommandesByMarcheId(marcheId);
+
+        double montantMarche =
+                marche.getMontantMarche() != null
+                        ? marche.getMontantMarche()
+                        : 0.0;
+
+        double montantCommande =
+                totalCommandes != null
+                        ? totalCommandes
+                        : 0.0;
+
+        double montantRestant =
+                Math.max(
+                        montantMarche - montantCommande,
+                        0.0
+                );
+
+        return Map.of(
+                "montantMarche", montantMarche,
+                "montantCommande", montantCommande,
+                "montantRestant", montantRestant
+        );
     }
 
     public void deleteCommande(Long id) {

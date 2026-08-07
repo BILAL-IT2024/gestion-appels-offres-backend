@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/commandes")
@@ -52,6 +53,13 @@ public class CommandeController {
     @GetMapping("/search")
     public List<Commande> searchCommandes(@RequestParam String keyword) {
         return commandeService.rechercherCommandes(keyword);
+    }
+
+    @GetMapping("/marche/{marcheId}/resume")
+    public Map<String, Double> getResumeMarche(
+            @PathVariable Long marcheId
+    ) {
+        return commandeService.getResumeMarche(marcheId);
     }
 
     @GetMapping("/export/excel")
