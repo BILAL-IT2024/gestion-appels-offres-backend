@@ -106,10 +106,110 @@ public class CommandeService {
         return commandeRepository.save(commande);
     }
 
-    public Commande updateCommande(Long id,
-                                   Commande commande) {
+    public Commande updateCommande(
+            Long id,
+            Commande commande
+    ) {
+
+        Commande ancienneCommande =
+                commandeRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Commande introuvable"
+                                )
+                        );
+
+        if (
+                commande.getMarche() == null
+                        || commande.getMarche().getId() == null
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Veuillez sélectionner un marché"
+            );
+        }
+
+        if (
+                commande.getMontantCommande() == null
+                        || commande.getMontantCommande() <= 0
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant de la commande doit être supérieur à zéro"
+            );
+        }
+
+        Long nouveauMarcheId =
+                commande.getMarche().getId();
+
+        Marche nouveauMarche =
+                marcheRepository
+                        .findById(nouveauMarcheId)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Marché introuvable"
+                                )
+                        );
+
+        if (nouveauMarche.getMontantMarche() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le marché sélectionné ne possède pas de montant"
+            );
+        }
+
+        Double totalCommandes =
+                commandeRepository
+                        .getTotalCommandesByMarcheId(
+                                nouveauMarcheId
+                        );
+
+        double totalActuel =
+                totalCommandes != null
+                        ? totalCommandes
+                        : 0.0;
+
+        boolean memeMarche =
+                ancienneCommande.getMarche() != null
+                        && ancienneCommande
+                        .getMarche()
+                        .getId()
+                        .equals(nouveauMarcheId);
+
+        double totalSansCommandeActuelle =
+                memeMarche
+                        ? totalActuel
+                        - ancienneCommande.getMontantCommande()
+                        : totalActuel;
+
+        double nouveauTotal =
+                totalSansCommandeActuelle
+                        + commande.getMontantCommande();
+
+        double montantMarche =
+                nouveauMarche.getMontantMarche();
+
+        if (nouveauTotal > montantMarche) {
+
+            double montantRestant =
+                    montantMarche
+                            - totalSansCommandeActuelle;
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant total des commandes dépasse "
+                            + "le montant du marché. "
+                            + "Montant disponible pour cette commande : "
+                            + montantRestant
+                            + " DH"
+            );
+        }
 
         commande.setId(id);
+        commande.setMarche(nouveauMarche);
 
         return commandeRepository.save(commande);
     }
