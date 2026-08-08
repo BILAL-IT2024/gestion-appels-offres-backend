@@ -20,6 +20,8 @@ import net.bilal.appeldoffresbackend.entities.Consultation;
 import net.bilal.appeldoffresbackend.repositories.ConsultationRepository;
 import net.bilal.appeldoffresbackend.entities.Offre;
 import net.bilal.appeldoffresbackend.repositories.OffreRepository;
+import net.bilal.appeldoffresbackend.entities.OrdreService;
+import net.bilal.appeldoffresbackend.repositories.OrdreServiceRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -37,6 +39,7 @@ public class PdfExportService {
     private final ClientRepository clientRepository;
     private final ConsultationRepository consultationRepository;
     private final OffreRepository offreRepository;
+    private final OrdreServiceRepository ordreServiceRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -517,6 +520,113 @@ public class PdfExportService {
 
             throw new RuntimeException(
                     "Erreur PDF Offre",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportOrdreServicePdf(Long id) {
+
+        try {
+
+            OrdreService ordre =
+                    ordreServiceRepository
+                            .findById(id)
+                            .orElseThrow();
+
+            Document document =
+                    new Document();
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(
+                    document,
+                    out
+            );
+
+            document.open();
+
+            document.add(
+                    new Paragraph("FICHE ORDRE DE SERVICE")
+            );
+
+            document.add(
+                    new Paragraph(" ")
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Numero ordre : "
+                                    + ordre.getNumeroOrdre()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Date ordre : "
+                                    + (
+                                    ordre.getDateOrdre() != null
+                                            ? ordre.getDateOrdre()
+                                            : ""
+                            )
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Date debut execution : "
+                                    + (
+                                    ordre.getDateDebutExecution() != null
+                                            ? ordre.getDateDebutExecution()
+                                            : ""
+                            )
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Objet : "
+                                    + (
+                                    ordre.getObjet() != null
+                                            ? ordre.getObjet()
+                                            : ""
+                            )
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Statut : "
+                                    + (
+                                    ordre.getStatut() != null
+                                            ? ordre.getStatut()
+                                            : ""
+                            )
+                    )
+            );
+
+            if (ordre.getMarche() != null) {
+
+                document.add(
+                        new Paragraph(
+                                "Marche associe : "
+                                        + ordre.getMarche()
+                                        .getNumeroMarche()
+                        )
+                );
+            }
+
+            document.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur PDF Ordre de service",
                     e
             );
         }

@@ -15,6 +15,8 @@ import net.bilal.appeldoffresbackend.entities.Consultation;
 import net.bilal.appeldoffresbackend.repositories.ConsultationRepository;
 import net.bilal.appeldoffresbackend.entities.Offre;
 import net.bilal.appeldoffresbackend.repositories.OffreRepository;
+import net.bilal.appeldoffresbackend.entities.OrdreService;
+import net.bilal.appeldoffresbackend.repositories.OrdreServiceRepository;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -40,6 +42,7 @@ public class ExcelExportService {
     private final ClientRepository clientRepository;
     private final ConsultationRepository consultationRepository;
     private final OffreRepository offreRepository;
+    private final OrdreServiceRepository ordreServiceRepository;
 
     public ByteArrayInputStream exportAOToExcel() {
 
@@ -643,6 +646,101 @@ public class ExcelExportService {
 
             throw new RuntimeException(
                     "Erreur export Excel Offres",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportOrdresServiceToExcel() {
+
+        try {
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet =
+                    workbook.createSheet("OrdresService");
+
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Numero Ordre");
+            header.createCell(2).setCellValue("Date Ordre");
+            header.createCell(3).setCellValue("Date Debut Execution");
+            header.createCell(4).setCellValue("Objet");
+            header.createCell(5).setCellValue("Statut");
+            header.createCell(6).setCellValue("Marche");
+
+            List<OrdreService> list =
+                    ordreServiceRepository.findAll();
+
+            int rowNum = 1;
+
+            for (OrdreService ordre : list) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(
+                        ordre.getId() != null
+                                ? ordre.getId()
+                                : 0
+                );
+
+                row.createCell(1).setCellValue(
+                        ordre.getNumeroOrdre() != null
+                                ? ordre.getNumeroOrdre()
+                                : ""
+                );
+
+                row.createCell(2).setCellValue(
+                        ordre.getDateOrdre() != null
+                                ? ordre.getDateOrdre().toString()
+                                : ""
+                );
+
+                row.createCell(3).setCellValue(
+                        ordre.getDateDebutExecution() != null
+                                ? ordre.getDateDebutExecution().toString()
+                                : ""
+                );
+
+                row.createCell(4).setCellValue(
+                        ordre.getObjet() != null
+                                ? ordre.getObjet()
+                                : ""
+                );
+
+                row.createCell(5).setCellValue(
+                        ordre.getStatut() != null
+                                ? ordre.getStatut()
+                                : ""
+                );
+
+                row.createCell(6).setCellValue(
+                        ordre.getMarche() != null
+                                && ordre.getMarche().getNumeroMarche() != null
+                                ? ordre.getMarche().getNumeroMarche()
+                                : ""
+                );
+            }
+
+            for (int i = 0; i < 7; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            workbook.write(out);
+            workbook.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur export Excel Ordres de service",
                     e
             );
         }
