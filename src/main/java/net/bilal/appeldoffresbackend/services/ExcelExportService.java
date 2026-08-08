@@ -13,6 +13,8 @@ import net.bilal.appeldoffresbackend.entities.Client;
 import net.bilal.appeldoffresbackend.repositories.ClientRepository;
 import net.bilal.appeldoffresbackend.entities.Consultation;
 import net.bilal.appeldoffresbackend.repositories.ConsultationRepository;
+import net.bilal.appeldoffresbackend.entities.Offre;
+import net.bilal.appeldoffresbackend.repositories.OffreRepository;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -37,6 +39,7 @@ public class ExcelExportService {
     private final PaiementRepository paiementRepository;
     private final ClientRepository clientRepository;
     private final ConsultationRepository consultationRepository;
+    private final OffreRepository offreRepository;
 
     public ByteArrayInputStream exportAOToExcel() {
 
@@ -524,6 +527,122 @@ public class ExcelExportService {
 
             throw new RuntimeException(
                     "Erreur export Excel Consultations",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportOffresToExcel() {
+
+        try {
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet = workbook.createSheet("Offres");
+
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Reference");
+            header.createCell(2).setCellValue("Date Offre");
+            header.createCell(3).setCellValue("Montant");
+            header.createCell(4).setCellValue("Statut");
+            header.createCell(5).setCellValue("DAS");
+            header.createCell(6).setCellValue("Source");
+            header.createCell(7).setCellValue("Reference Source");
+
+            List<Offre> list =
+                    offreRepository.findAll();
+
+            int rowNum = 1;
+
+            for (Offre offre : list) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(
+                        offre.getId() != null
+                                ? offre.getId()
+                                : 0
+                );
+
+                row.createCell(1).setCellValue(
+                        offre.getReference() != null
+                                ? offre.getReference()
+                                : ""
+                );
+
+                row.createCell(2).setCellValue(
+                        offre.getDateOffre() != null
+                                ? offre.getDateOffre().toString()
+                                : ""
+                );
+
+                row.createCell(3).setCellValue(
+                        offre.getMontantOffre() != null
+                                ? offre.getMontantOffre()
+                                : 0
+                );
+
+                row.createCell(4).setCellValue(
+                        offre.getStatut() != null
+                                ? offre.getStatut()
+                                : ""
+                );
+
+                row.createCell(5).setCellValue(
+                        offre.getDas() != null
+                                ? offre.getDas().toString()
+                                : ""
+                );
+
+                if (offre.getAppelDoffres() != null) {
+
+                    row.createCell(6)
+                            .setCellValue("Appel d'offres");
+
+                    row.createCell(7).setCellValue(
+                            offre.getAppelDoffres().getReference() != null
+                                    ? offre.getAppelDoffres().getReference()
+                                    : ""
+                    );
+
+                } else if (offre.getConsultation() != null) {
+
+                    row.createCell(6)
+                            .setCellValue("Consultation");
+
+                    row.createCell(7).setCellValue(
+                            offre.getConsultation().getReference() != null
+                                    ? offre.getConsultation().getReference()
+                                    : ""
+                    );
+
+                } else {
+
+                    row.createCell(6).setCellValue("");
+                    row.createCell(7).setCellValue("");
+                }
+            }
+
+            for (int i = 0; i < 8; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            workbook.write(out);
+            workbook.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur export Excel Offres",
                     e
             );
         }

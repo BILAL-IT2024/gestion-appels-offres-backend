@@ -18,6 +18,8 @@ import net.bilal.appeldoffresbackend.entities.Client;
 import net.bilal.appeldoffresbackend.repositories.ClientRepository;
 import net.bilal.appeldoffresbackend.entities.Consultation;
 import net.bilal.appeldoffresbackend.repositories.ConsultationRepository;
+import net.bilal.appeldoffresbackend.entities.Offre;
+import net.bilal.appeldoffresbackend.repositories.OffreRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -34,6 +36,7 @@ public class PdfExportService {
     private final PaiementRepository paiementRepository;
     private final ClientRepository clientRepository;
     private final ConsultationRepository consultationRepository;
+    private final OffreRepository offreRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -393,6 +396,127 @@ public class PdfExportService {
 
             throw new RuntimeException(
                     "Erreur PDF Consultation",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportOffrePdf(Long id) {
+
+        try {
+
+            Offre offre =
+                    offreRepository
+                            .findById(id)
+                            .orElseThrow();
+
+            Document document =
+                    new Document();
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(
+                    document,
+                    out
+            );
+
+            document.open();
+
+            document.add(
+                    new Paragraph("FICHE OFFRE")
+            );
+
+            document.add(
+                    new Paragraph(" ")
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Reference : "
+                                    + offre.getReference()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Date offre : "
+                                    + offre.getDateOffre()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Montant offre : "
+                                    + offre.getMontantOffre()
+                                    + " DH"
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Statut : "
+                                    + offre.getStatut()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "DAS : "
+                                    + (
+                                    offre.getDas() != null
+                                            ? offre.getDas().toString()
+                                            : ""
+                            )
+                    )
+            );
+
+            if (offre.getAppelDoffres() != null) {
+
+                document.add(
+                        new Paragraph(
+                                "Source : Appel d'offres"
+                        )
+                );
+
+                document.add(
+                        new Paragraph(
+                                "Appel d'offres : "
+                                        + offre
+                                        .getAppelDoffres()
+                                        .getReference()
+                        )
+                );
+            }
+
+            if (offre.getConsultation() != null) {
+
+                document.add(
+                        new Paragraph(
+                                "Source : Consultation"
+                        )
+                );
+
+                document.add(
+                        new Paragraph(
+                                "Consultation : "
+                                        + offre
+                                        .getConsultation()
+                                        .getReference()
+                        )
+                );
+            }
+
+            document.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur PDF Offre",
                     e
             );
         }
