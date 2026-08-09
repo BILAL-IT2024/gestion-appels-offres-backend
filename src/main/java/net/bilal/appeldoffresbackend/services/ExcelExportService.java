@@ -17,6 +17,8 @@ import net.bilal.appeldoffresbackend.entities.Offre;
 import net.bilal.appeldoffresbackend.repositories.OffreRepository;
 import net.bilal.appeldoffresbackend.entities.OrdreService;
 import net.bilal.appeldoffresbackend.repositories.OrdreServiceRepository;
+import net.bilal.appeldoffresbackend.entities.BonLivraison;
+import net.bilal.appeldoffresbackend.repositories.BonLivraisonRepository;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -43,6 +45,7 @@ public class ExcelExportService {
     private final ConsultationRepository consultationRepository;
     private final OffreRepository offreRepository;
     private final OrdreServiceRepository ordreServiceRepository;
+    private final BonLivraisonRepository bonLivraisonRepository;
 
     public ByteArrayInputStream exportAOToExcel() {
 
@@ -741,6 +744,107 @@ public class ExcelExportService {
 
             throw new RuntimeException(
                     "Erreur export Excel Ordres de service",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportBonsLivraisonToExcel() {
+
+        try {
+
+            Workbook workbook = new XSSFWorkbook();
+
+            Sheet sheet =
+                    workbook.createSheet("BonsLivraison");
+
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Numero Bon");
+            header.createCell(2).setCellValue("Date Livraison");
+            header.createCell(3).setCellValue("Objet");
+            header.createCell(4).setCellValue("Statut");
+            header.createCell(5).setCellValue("Commande");
+            header.createCell(6).setCellValue("Marche");
+
+            List<BonLivraison> list =
+                    bonLivraisonRepository.findAll();
+
+            int rowNum = 1;
+
+            for (BonLivraison bon : list) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(
+                        bon.getId() != null
+                                ? bon.getId()
+                                : 0
+                );
+
+                row.createCell(1).setCellValue(
+                        bon.getNumeroBon() != null
+                                ? bon.getNumeroBon()
+                                : ""
+                );
+
+                row.createCell(2).setCellValue(
+                        bon.getDateLivraison() != null
+                                ? bon.getDateLivraison().toString()
+                                : ""
+                );
+
+                row.createCell(3).setCellValue(
+                        bon.getObjet() != null
+                                ? bon.getObjet()
+                                : ""
+                );
+
+                row.createCell(4).setCellValue(
+                        bon.getStatut() != null
+                                ? bon.getStatut()
+                                : ""
+                );
+
+                row.createCell(5).setCellValue(
+                        bon.getCommande() != null
+                                && bon.getCommande().getNumeroCommande() != null
+                                ? bon.getCommande().getNumeroCommande()
+                                : ""
+                );
+
+                row.createCell(6).setCellValue(
+                        bon.getCommande() != null
+                                && bon.getCommande().getMarche() != null
+                                && bon.getCommande()
+                                .getMarche()
+                                .getNumeroMarche() != null
+                                ? bon.getCommande()
+                                .getMarche()
+                                .getNumeroMarche()
+                                : ""
+                );
+            }
+
+            for (int i = 0; i < 7; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            workbook.write(out);
+            workbook.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur export Excel Bons de livraison",
                     e
             );
         }

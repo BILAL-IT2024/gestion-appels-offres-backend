@@ -22,6 +22,8 @@ import net.bilal.appeldoffresbackend.entities.Offre;
 import net.bilal.appeldoffresbackend.repositories.OffreRepository;
 import net.bilal.appeldoffresbackend.entities.OrdreService;
 import net.bilal.appeldoffresbackend.repositories.OrdreServiceRepository;
+import net.bilal.appeldoffresbackend.entities.BonLivraison;
+import net.bilal.appeldoffresbackend.repositories.BonLivraisonRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -40,6 +42,7 @@ public class PdfExportService {
     private final ConsultationRepository consultationRepository;
     private final OffreRepository offreRepository;
     private final OrdreServiceRepository ordreServiceRepository;
+    private final BonLivraisonRepository bonLivraisonRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -627,6 +630,108 @@ public class PdfExportService {
 
             throw new RuntimeException(
                     "Erreur PDF Ordre de service",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportBonLivraisonPdf(Long id) {
+
+        try {
+
+            BonLivraison bon =
+                    bonLivraisonRepository
+                            .findById(id)
+                            .orElseThrow();
+
+            Document document = new Document();
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(document, out);
+
+            document.open();
+
+            document.add(
+                    new Paragraph("FICHE BON DE LIVRAISON")
+            );
+
+            document.add(new Paragraph(" "));
+
+            document.add(
+                    new Paragraph(
+                            "Numero bon : "
+                                    + bon.getNumeroBon()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Date livraison : "
+                                    + (
+                                    bon.getDateLivraison() != null
+                                            ? bon.getDateLivraison()
+                                            : ""
+                            )
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Objet : "
+                                    + (
+                                    bon.getObjet() != null
+                                            ? bon.getObjet()
+                                            : ""
+                            )
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Statut : "
+                                    + (
+                                    bon.getStatut() != null
+                                            ? bon.getStatut()
+                                            : ""
+                            )
+                    )
+            );
+
+            if (bon.getCommande() != null) {
+
+                document.add(
+                        new Paragraph(
+                                "Commande : "
+                                        + bon.getCommande()
+                                        .getNumeroCommande()
+                        )
+                );
+
+                if (bon.getCommande().getMarche() != null) {
+
+                    document.add(
+                            new Paragraph(
+                                    "Marche : "
+                                            + bon.getCommande()
+                                            .getMarche()
+                                            .getNumeroMarche()
+                            )
+                    );
+                }
+            }
+
+            document.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur PDF Bon de livraison",
                     e
             );
         }
