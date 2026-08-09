@@ -24,6 +24,8 @@ import net.bilal.appeldoffresbackend.entities.OrdreService;
 import net.bilal.appeldoffresbackend.repositories.OrdreServiceRepository;
 import net.bilal.appeldoffresbackend.entities.BonLivraison;
 import net.bilal.appeldoffresbackend.repositories.BonLivraisonRepository;
+import net.bilal.appeldoffresbackend.entities.Facture;
+import net.bilal.appeldoffresbackend.repositories.FactureRepository;
 
 import org.springframework.stereotype.Service;
 
@@ -43,6 +45,7 @@ public class PdfExportService {
     private final OffreRepository offreRepository;
     private final OrdreServiceRepository ordreServiceRepository;
     private final BonLivraisonRepository bonLivraisonRepository;
+    private final FactureRepository factureRepository;
 
     public ByteArrayInputStream exportAOPdf(Long id) {
 
@@ -732,6 +735,175 @@ public class PdfExportService {
 
             throw new RuntimeException(
                     "Erreur PDF Bon de livraison",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportFacturePdf(Long id) {
+
+        try {
+
+            Facture facture =
+                    factureRepository
+                            .findById(id)
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "Facture introuvable"
+                                    )
+                            );
+
+            Document document = new Document();
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            PdfWriter.getInstance(document, out);
+
+            document.open();
+
+            document.add(
+                    new Paragraph("FICHE FACTURE")
+            );
+
+            document.add(new Paragraph(" "));
+
+            document.add(
+                    new Paragraph(
+                            "Numero facture : "
+                                    + facture.getNumeroFacture()
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Date facture : "
+                                    + (
+                                    facture.getDateFacture() != null
+                                            ? facture.getDateFacture()
+                                            : ""
+                            )
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Date echeance : "
+                                    + (
+                                    facture.getDateEcheance() != null
+                                            ? facture.getDateEcheance()
+                                            : ""
+                            )
+                    )
+            );
+
+            document.add(new Paragraph(" "));
+
+            document.add(
+                    new Paragraph(
+                            "Montant HT : "
+                                    + (
+                                    facture.getMontantHT() != null
+                                            ? facture.getMontantHT()
+                                            : 0
+                            )
+                                    + " DH"
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "TVA : "
+                                    + (
+                                    facture.getTva() != null
+                                            ? facture.getTva()
+                                            : 0
+                            )
+                                    + " %"
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Montant TTC : "
+                                    + (
+                                    facture.getMontantTTC() != null
+                                            ? facture.getMontantTTC()
+                                            : 0
+                            )
+                                    + " DH"
+                    )
+            );
+
+            document.add(
+                    new Paragraph(
+                            "Statut : "
+                                    + (
+                                    facture.getStatut() != null
+                                            ? facture.getStatut()
+                                            : ""
+                            )
+                    )
+            );
+
+            if (facture.getBonLivraison() != null) {
+
+                document.add(new Paragraph(" "));
+
+                document.add(
+                        new Paragraph(
+                                "Bon de livraison : "
+                                        + facture
+                                        .getBonLivraison()
+                                        .getNumeroBon()
+                        )
+                );
+
+                if (
+                        facture.getBonLivraison()
+                                .getCommande() != null
+                ) {
+
+                    document.add(
+                            new Paragraph(
+                                    "Commande : "
+                                            + facture
+                                            .getBonLivraison()
+                                            .getCommande()
+                                            .getNumeroCommande()
+                            )
+                    );
+
+                    if (
+                            facture.getBonLivraison()
+                                    .getCommande()
+                                    .getMarche() != null
+                    ) {
+
+                        document.add(
+                                new Paragraph(
+                                        "Marche : "
+                                                + facture
+                                                .getBonLivraison()
+                                                .getCommande()
+                                                .getMarche()
+                                                .getNumeroMarche()
+                                )
+                        );
+                    }
+                }
+            }
+
+            document.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur PDF Facture",
                     e
             );
         }

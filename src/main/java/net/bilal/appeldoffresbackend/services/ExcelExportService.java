@@ -19,6 +19,8 @@ import net.bilal.appeldoffresbackend.entities.OrdreService;
 import net.bilal.appeldoffresbackend.repositories.OrdreServiceRepository;
 import net.bilal.appeldoffresbackend.entities.BonLivraison;
 import net.bilal.appeldoffresbackend.repositories.BonLivraisonRepository;
+import net.bilal.appeldoffresbackend.entities.Facture;
+import net.bilal.appeldoffresbackend.repositories.FactureRepository;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -46,6 +48,7 @@ public class ExcelExportService {
     private final OffreRepository offreRepository;
     private final OrdreServiceRepository ordreServiceRepository;
     private final BonLivraisonRepository bonLivraisonRepository;
+    private final FactureRepository factureRepository;
 
     public ByteArrayInputStream exportAOToExcel() {
 
@@ -845,6 +848,129 @@ public class ExcelExportService {
 
             throw new RuntimeException(
                     "Erreur export Excel Bons de livraison",
+                    e
+            );
+        }
+    }
+
+    public ByteArrayInputStream exportFacturesToExcel() {
+
+        try {
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Factures");
+
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Numero facture");
+            header.createCell(2).setCellValue("Date facture");
+            header.createCell(3).setCellValue("Date echeance");
+            header.createCell(4).setCellValue("Montant HT");
+            header.createCell(5).setCellValue("TVA (%)");
+            header.createCell(6).setCellValue("Montant TTC");
+            header.createCell(7).setCellValue("Statut");
+            header.createCell(8).setCellValue("Bon livraison");
+            header.createCell(9).setCellValue("Commande");
+
+            List<Facture> factures =
+                    factureRepository.findAll();
+
+            int rowNum = 1;
+
+            for (Facture facture : factures) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(
+                        facture.getId() != null
+                                ? facture.getId()
+                                : 0
+                );
+
+                row.createCell(1).setCellValue(
+                        facture.getNumeroFacture() != null
+                                ? facture.getNumeroFacture()
+                                : ""
+                );
+
+                row.createCell(2).setCellValue(
+                        facture.getDateFacture() != null
+                                ? facture.getDateFacture().toString()
+                                : ""
+                );
+
+                row.createCell(3).setCellValue(
+                        facture.getDateEcheance() != null
+                                ? facture.getDateEcheance().toString()
+                                : ""
+                );
+
+                row.createCell(4).setCellValue(
+                        facture.getMontantHT() != null
+                                ? facture.getMontantHT()
+                                : 0
+                );
+
+                row.createCell(5).setCellValue(
+                        facture.getTva() != null
+                                ? facture.getTva()
+                                : 0
+                );
+
+                row.createCell(6).setCellValue(
+                        facture.getMontantTTC() != null
+                                ? facture.getMontantTTC()
+                                : 0
+                );
+
+                row.createCell(7).setCellValue(
+                        facture.getStatut() != null
+                                ? facture.getStatut()
+                                : ""
+                );
+
+                row.createCell(8).setCellValue(
+                        facture.getBonLivraison() != null
+                                && facture.getBonLivraison()
+                                .getNumeroBon() != null
+                                ? facture.getBonLivraison()
+                                .getNumeroBon()
+                                : ""
+                );
+
+                row.createCell(9).setCellValue(
+                        facture.getBonLivraison() != null
+                                && facture.getBonLivraison()
+                                .getCommande() != null
+                                && facture.getBonLivraison()
+                                .getCommande()
+                                .getNumeroCommande() != null
+                                ? facture.getBonLivraison()
+                                .getCommande()
+                                .getNumeroCommande()
+                                : ""
+                );
+            }
+
+            for (int i = 0; i < 10; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out =
+                    new ByteArrayOutputStream();
+
+            workbook.write(out);
+            workbook.close();
+
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Erreur export Excel Factures",
                     e
             );
         }
