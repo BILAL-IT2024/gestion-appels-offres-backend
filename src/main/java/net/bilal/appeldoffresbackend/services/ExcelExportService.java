@@ -872,6 +872,7 @@ public class ExcelExportService {
             header.createCell(7).setCellValue("Statut");
             header.createCell(8).setCellValue("Bon livraison");
             header.createCell(9).setCellValue("Commande");
+            header.createCell(10).setCellValue("Marche");
 
             List<Facture> factures =
                     factureRepository.findAll();
@@ -951,9 +952,26 @@ public class ExcelExportService {
                                 .getNumeroCommande()
                                 : ""
                 );
+
+                row.createCell(10).setCellValue(
+                        facture.getBonLivraison() != null
+                                && facture.getBonLivraison().getCommande() != null
+                                && facture.getBonLivraison()
+                                .getCommande()
+                                .getMarche() != null
+                                && facture.getBonLivraison()
+                                .getCommande()
+                                .getMarche()
+                                .getNumeroMarche() != null
+                                ? facture.getBonLivraison()
+                                .getCommande()
+                                .getMarche()
+                                .getNumeroMarche()
+                                : ""
+                );
             }
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 11; i++) {
                 sheet.autoSizeColumn(i);
             }
 
