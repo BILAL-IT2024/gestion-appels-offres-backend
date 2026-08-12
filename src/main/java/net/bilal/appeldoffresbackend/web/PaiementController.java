@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/paiements")
@@ -91,6 +92,24 @@ public class PaiementController {
                 )
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file);
+    }
+
+    @GetMapping("/facture/{factureId}")
+    public List<Paiement> getPaiementsByFacture(
+            @PathVariable Long factureId
+    ) {
+
+        return paiementService
+                .getPaiementsByFacture(factureId);
+    }
+
+    @GetMapping("/facture/{factureId}/resume")
+    public Map<String, Double> getResumeFacture(
+            @PathVariable Long factureId
+    ) {
+
+        return paiementService
+                .getResumeFacture(factureId);
     }
 
     @DeleteMapping("/{id}")

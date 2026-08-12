@@ -31,4 +31,9 @@ public class Paiement {
 
     @ManyToOne
     private Commande commande;
+
+    @ManyToOne
+    @JoinColumn(name = "facture_id")
+    private Facture facture;
+
 }

@@ -5,6 +5,7 @@ import net.bilal.appeldoffresbackend.dtos.TopClientDTO;
 import net.bilal.appeldoffresbackend.entities.Paiement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -53,5 +54,16 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     List<TopClientDTO> getTopClients();
 
     List<Paiement> findByReferencePaiementContainingIgnoreCase(String referencePaiement);
+
+    @Query("""
+       SELECT COALESCE(SUM(p.montantPaiement), 0)
+       FROM Paiement p
+       WHERE p.facture.id = :factureId
+       """)
+    Double getTotalPaiementsByFactureId(
+            @Param("factureId") Long factureId
+    );
+
+    List<Paiement> findByFactureId(Long factureId);
 
 }
