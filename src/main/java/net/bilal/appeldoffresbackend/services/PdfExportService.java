@@ -305,14 +305,41 @@ public class PdfExportService {
                     "Date paiement : " + paiement.getDatePaiement()));
 
             document.add(new Paragraph(
-                    "Montant paiement : " + paiement.getMontantPaiement()));
+                    "Montant paiement : "
+                            + paiement.getMontantPaiement()
+                            + " DH"));
 
             document.add(new Paragraph(
-                    "Mode paiement : " + paiement.getModePaiement()));
+                    "Mode paiement : "
+                            + paiement.getModePaiement()));
+
+            document.add(new Paragraph(
+                    "Statut : "
+                            + (
+                            paiement.getStatut() != null
+                                    ? paiement.getStatut()
+                                    : ""
+                    )
+            ));
+
+            if (paiement.getFacture() != null) {
+
+                document.add(new Paragraph(
+                        "Facture : "
+                                + paiement
+                                .getFacture()
+                                .getNumeroFacture()
+                ));
+            }
 
             if (paiement.getCommande() != null) {
+
                 document.add(new Paragraph(
-                        "Commande : " + paiement.getCommande().getNumeroCommande()));
+                        "Commande : "
+                                + paiement
+                                .getCommande()
+                                .getNumeroCommande()
+                ));
             }
 
             document.close();

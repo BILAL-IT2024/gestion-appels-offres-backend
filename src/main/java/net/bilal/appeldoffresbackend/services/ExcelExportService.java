@@ -309,11 +309,12 @@ public class ExcelExportService {
 
     public ByteArrayInputStream exportPaiementsToExcel() {
 
-        try {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out =
+                     new ByteArrayOutputStream()) {
 
-            Workbook workbook = new XSSFWorkbook();
-
-            Sheet sheet = workbook.createSheet("Paiements");
+            Sheet sheet =
+                    workbook.createSheet("Paiements");
 
             Row header = sheet.createRow(0);
 
@@ -322,62 +323,93 @@ public class ExcelExportService {
             header.createCell(2).setCellValue("Date Paiement");
             header.createCell(3).setCellValue("Montant");
             header.createCell(4).setCellValue("Mode Paiement");
-            header.createCell(5).setCellValue("Commande");
+            header.createCell(5).setCellValue("Statut");
+            header.createCell(6).setCellValue("Facture");
+            header.createCell(7).setCellValue("Commande");
 
-            List<Paiement> list = paiementRepository.findAll();
+            List<Paiement> paiements =
+                    paiementRepository.findAll();
 
-            int rowNum = 1;
+            int rowIdx = 1;
 
-            for (Paiement paiement : list) {
+            for (Paiement paiement : paiements) {
 
-                Row row = sheet.createRow(rowNum++);
+                Row row =
+                        sheet.createRow(rowIdx++);
 
-                row.createCell(0).setCellValue(
-                        paiement.getId() != null ? paiement.getId() : 0
-                );
+                // ID
+                if (paiement.getId() != null) {
+                    row.createCell(0)
+                            .setCellValue(paiement.getId());
+                }
 
+                // Référence
                 row.createCell(1).setCellValue(
                         paiement.getReferencePaiement() != null
                                 ? paiement.getReferencePaiement()
                                 : ""
                 );
 
+                // Date paiement
                 row.createCell(2).setCellValue(
                         paiement.getDatePaiement() != null
                                 ? paiement.getDatePaiement().toString()
                                 : ""
                 );
 
-                row.createCell(3).setCellValue(
-                        paiement.getMontantPaiement() != null
-                                ? paiement.getMontantPaiement()
-                                : 0
-                );
+                // Montant
+                if (paiement.getMontantPaiement() != null) {
+                    row.createCell(3)
+                            .setCellValue(
+                                    paiement.getMontantPaiement()
+                            );
+                }
 
+                // Mode paiement
                 row.createCell(4).setCellValue(
                         paiement.getModePaiement() != null
                                 ? paiement.getModePaiement()
                                 : ""
                 );
 
+                // Statut
                 row.createCell(5).setCellValue(
+                        paiement.getStatut() != null
+                                ? paiement.getStatut()
+                                : ""
+                );
+
+                // Facture
+                row.createCell(6).setCellValue(
+                        paiement.getFacture() != null &&
+                                paiement.getFacture()
+                                        .getNumeroFacture() != null
+                                ? paiement.getFacture()
+                                .getNumeroFacture()
+                                : ""
+                );
+
+                // Commande
+                row.createCell(7).setCellValue(
                         paiement.getCommande() != null &&
-                                paiement.getCommande().getNumeroCommande() != null
-                                ? paiement.getCommande().getNumeroCommande()
+                                paiement.getCommande()
+                                        .getNumeroCommande() != null
+                                ? paiement.getCommande()
+                                .getNumeroCommande()
                                 : ""
                 );
             }
 
-            for (int i = 0; i < 6; i++) {
+            // Ajustement automatique des 8 colonnes
+            for (int i = 0; i < 8; i++) {
                 sheet.autoSizeColumn(i);
             }
 
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-
             workbook.write(out);
-            workbook.close();
 
-            return new ByteArrayInputStream(out.toByteArray());
+            return new ByteArrayInputStream(
+                    out.toByteArray()
+            );
 
         } catch (Exception e) {
 
