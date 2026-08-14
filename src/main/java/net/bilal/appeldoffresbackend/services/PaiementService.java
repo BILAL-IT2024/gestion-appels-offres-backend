@@ -304,10 +304,13 @@ public class PaiementService {
          * Facture -> BonLivraison -> Commande
          */
         if (
-                paiement.getCommande() == null
+                (
+                        paiement.getCommande() == null
+                                || paiement.getCommande().getId() == null
+                                || paiement.getCommande().getId() == 0
+                )
                         && facture.getBonLivraison() != null
-                        && facture.getBonLivraison()
-                        .getCommande() != null
+                        && facture.getBonLivraison().getCommande() != null
         ) {
 
             paiement.setCommande(
