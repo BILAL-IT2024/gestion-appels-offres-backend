@@ -79,17 +79,22 @@ public class DashboardController {
 
         double paiementMoyen = 0;
 
-        if (totalPaiements > 0) {
+        if (paiementsValides > 0) {
             paiementMoyen =
-                    paiementRepository.getTotalChiffreAffaire()
-                            / totalPaiements;
+                    paiementRepository.getChiffreAffaireValide()
+                            / paiementsValides;
         }
+
+        paiementMoyen =
+                Math.round(
+                        paiementMoyen * 100.0
+                ) / 100.0;
 
         paiementMoyen =
                 Math.round(paiementMoyen * 100.0) / 100.0;
 
         double chiffreAffaireTotal =
-                paiementRepository.getTotalChiffreAffaire();
+                paiementRepository.getChiffreAffaireValide();
 
         double totalEncaisse =
                 paiementRepository.getTotalEncaisseFactures();
