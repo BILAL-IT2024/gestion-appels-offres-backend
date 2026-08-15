@@ -64,4 +64,18 @@ public class DashboardStatsDTO {
     private long aoEnRetard;
 
     private long aoUrgents;
+
+    private long totalFactures;
+
+    private long facturesPayees;
+
+    private long facturesPartiellementPayees;
+
+    private long facturesEmises;
+
+    private double montantTotalFacture;
+
+    private double resteTotalAEncaisser;
+
+    private double totalEncaisse;
 }

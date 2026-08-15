@@ -25,6 +25,7 @@ public class DashboardController {
     private final MarcheRepository marcheRepository;
     private final CommandeRepository commandeRepository;
     private final PaiementRepository paiementRepository;
+    private final FactureRepository factureRepository;
 
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
@@ -89,6 +90,42 @@ public class DashboardController {
 
         double chiffreAffaireTotal =
                 paiementRepository.getTotalChiffreAffaire();
+
+        double totalEncaisse =
+                paiementRepository.getTotalEncaisseFactures();
+
+        double montantTotalFacture =
+                factureRepository.getTotalFacture();
+
+        long totalFactures =
+                factureRepository.count();
+
+        long facturesPayees =
+                factureRepository
+                        .countByStatutIgnoreCase("PAYEE");
+
+        long facturesPartiellementPayees =
+                factureRepository
+                        .countByStatutIgnoreCase(
+                                "PARTIELLEMENT_PAYEE"
+                        );
+
+        long facturesEmises =
+                factureRepository
+                        .countByStatutIgnoreCase("EMISE");
+
+        double resteTotalAEncaisser =
+                montantTotalFacture
+                        - totalEncaisse;
+
+        if (resteTotalAEncaisser < 0) {
+            resteTotalAEncaisser = 0;
+        }
+
+        resteTotalAEncaisser =
+                Math.round(
+                        resteTotalAEncaisser * 100.0
+                ) / 100.0;
 
         long totalAO = appelDoffresRepository.count();
 
@@ -187,7 +224,14 @@ public class DashboardController {
                 montantTotalAO,
                 topClient,
                 aoEnRetard,
-                aoUrgents
+                aoUrgents,
+                totalFactures,
+                facturesPayees,
+                facturesPartiellementPayees,
+                facturesEmises,
+                montantTotalFacture,
+                resteTotalAEncaisser,
+                totalEncaisse
         );
     }
 

@@ -2,6 +2,7 @@ package net.bilal.appeldoffresbackend.repositories;
 
 import net.bilal.appeldoffresbackend.entities.Facture;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,4 +19,13 @@ public interface FactureRepository
 
     List<Facture>
     findByStatutIgnoreCase(String statut);
+
+    @Query("""
+       SELECT COALESCE(SUM(f.montantTTC), 0)
+       FROM Facture f
+       """)
+    Double getTotalFacture();
+
+    long countByStatutIgnoreCase(String statut);
+
 }
