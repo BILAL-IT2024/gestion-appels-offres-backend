@@ -221,13 +221,29 @@ public class CommandeService {
                                 )
                         );
 
-        if (
-                commande.getMarche() == null
-                        || commande.getMarche().getId() == null
-        ) {
+        boolean hasMarche =
+                commande.getMarche() != null
+                        && commande.getMarche().getId() != null;
+
+        boolean hasConsultation =
+                commande.getConsultation() != null
+                        && commande.getConsultation().getId() != null;
+
+
+        if (!hasMarche && !hasConsultation) {
+
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Veuillez sélectionner un marché"
+                    "Veuillez sélectionner un marché ou une consultation retenue"
+            );
+        }
+
+
+        if (hasMarche && hasConsultation) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Une commande ne peut pas être liée à un marché et une consultation en même temps"
             );
         }
 
@@ -241,75 +257,168 @@ public class CommandeService {
             );
         }
 
-        Long nouveauMarcheId =
-                commande.getMarche().getId();
+        if (hasMarche) {
 
-        Marche nouveauMarche =
-                marcheRepository
-                        .findById(nouveauMarcheId)
-                        .orElseThrow(() ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Marché introuvable"
-                                )
-                        );
+            Long nouveauMarcheId =
+                    commande.getMarche().getId();
 
-        if (nouveauMarche.getMontantMarche() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Le marché sélectionné ne possède pas de montant"
-            );
+            Marche nouveauMarche =
+                    marcheRepository
+                            .findById(nouveauMarcheId)
+                            .orElseThrow(() ->
+                                    new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND,
+                                            "Marché introuvable"
+                                    )
+                            );
+
+            if (nouveauMarche.getMontantMarche() == null) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Le marché sélectionné ne possède pas de montant"
+                );
+            }
+
+            Double totalCommandes =
+                    commandeRepository
+                            .getTotalCommandesByMarcheId(
+                                    nouveauMarcheId
+                            );
+
+            double totalActuel =
+                    totalCommandes != null
+                            ? totalCommandes
+                            : 0.0;
+
+            boolean memeMarche =
+                    ancienneCommande.getMarche() != null
+                            && ancienneCommande
+                            .getMarche()
+                            .getId()
+                            .equals(nouveauMarcheId);
+
+            double totalSansCommandeActuelle =
+                    memeMarche
+                            ? totalActuel
+                            - ancienneCommande.getMontantCommande()
+                            : totalActuel;
+
+            double nouveauTotal =
+                    totalSansCommandeActuelle
+                            + commande.getMontantCommande();
+
+            double montantMarche =
+                    nouveauMarche.getMontantMarche();
+
+            if (nouveauTotal > montantMarche) {
+
+                double montantRestant =
+                        montantMarche
+                                - totalSansCommandeActuelle;
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Le montant total des commandes dépasse "
+                                + "le montant du marché. "
+                                + "Montant disponible pour cette commande : "
+                                + montantRestant
+                                + " DH"
+                );
+            }
+
+            commande.setMarche(nouveauMarche);
+            commande.setConsultation(null);
         }
 
-        Double totalCommandes =
-                commandeRepository
-                        .getTotalCommandesByMarcheId(
-                                nouveauMarcheId
-                        );
+        if (hasConsultation) {
 
-        double totalActuel =
-                totalCommandes != null
-                        ? totalCommandes
-                        : 0.0;
+            Long nouvelleConsultationId =
+                    commande.getConsultation().getId();
 
-        boolean memeMarche =
-                ancienneCommande.getMarche() != null
-                        && ancienneCommande
-                        .getMarche()
-                        .getId()
-                        .equals(nouveauMarcheId);
+            Consultation nouvelleConsultation =
+                    consultationRepository
+                            .findById(nouvelleConsultationId)
+                            .orElseThrow(() ->
+                                    new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND,
+                                            "Consultation introuvable"
+                                    )
+                            );
 
-        double totalSansCommandeActuelle =
-                memeMarche
-                        ? totalActuel
-                        - ancienneCommande.getMontantCommande()
-                        : totalActuel;
+            if (
+                    nouvelleConsultation.getStatut() == null
+                            || !nouvelleConsultation
+                            .getStatut()
+                            .equalsIgnoreCase("RETENUE")
+            ) {
 
-        double nouveauTotal =
-                totalSansCommandeActuelle
-                        + commande.getMontantCommande();
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "La consultation sélectionnée doit être RETENUE"
+                );
+            }
 
-        double montantMarche =
-                nouveauMarche.getMontantMarche();
+            if (nouvelleConsultation.getMontantPropose() == null) {
 
-        if (nouveauTotal > montantMarche) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "La consultation sélectionnée ne possède pas de montant"
+                );
+            }
 
-            double montantRestant =
-                    montantMarche
-                            - totalSansCommandeActuelle;
+            BigDecimal totalCommandes =
+                    commandeRepository
+                            .totalCommandesParConsultation(
+                                    nouvelleConsultationId
+                            );
 
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Le montant total des commandes dépasse "
-                            + "le montant du marché. "
-                            + "Montant disponible pour cette commande : "
-                            + montantRestant
-                            + " DH"
-            );
+            double totalActuel =
+                    totalCommandes != null
+                            ? totalCommandes.doubleValue()
+                            : 0.0;
+
+            boolean memeConsultation =
+                    ancienneCommande.getConsultation() != null
+                            && ancienneCommande
+                            .getConsultation()
+                            .getId()
+                            .equals(nouvelleConsultationId);
+
+            double totalSansCommandeActuelle =
+                    memeConsultation
+                            ? totalActuel
+                            - ancienneCommande.getMontantCommande()
+                            : totalActuel;
+
+            double nouveauTotal =
+                    totalSansCommandeActuelle
+                            + commande.getMontantCommande();
+
+            double montantConsultation =
+                    nouvelleConsultation.getMontantPropose();
+
+            if (nouveauTotal > montantConsultation) {
+
+                double montantRestant =
+                        montantConsultation
+                                - totalSansCommandeActuelle;
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Le montant total des commandes dépasse "
+                                + "le montant de la consultation. "
+                                + "Montant disponible pour cette commande : "
+                                + montantRestant
+                                + " DH"
+                );
+            }
+
+            commande.setConsultation(nouvelleConsultation);
+            commande.setMarche(null);
         }
 
         commande.setId(id);
-        commande.setMarche(nouveauMarche);
 
         return commandeRepository.save(commande);
     }
