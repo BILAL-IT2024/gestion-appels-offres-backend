@@ -8,7 +8,10 @@ import net.bilal.appeldoffresbackend.entities.Marche;
 import net.bilal.appeldoffresbackend.repositories.MarcheRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import net.bilal.appeldoffresbackend.entities.Consultation;
+import net.bilal.appeldoffresbackend.repositories.ConsultationRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +21,7 @@ public class CommandeService {
 
     private final CommandeRepository commandeRepository;
     private final MarcheRepository marcheRepository;
+    private final ConsultationRepository consultationRepository;
 
     public List<Commande> getAllCommandes() {
         return commandeRepository.findAll();
@@ -29,13 +33,27 @@ public class CommandeService {
 
     public Commande saveCommande(Commande commande) {
 
-        if (
-                commande.getMarche() == null
-                        || commande.getMarche().getId() == null
-        ) {
+        boolean hasMarche =
+                commande.getMarche() != null
+                        && commande.getMarche().getId() != null;
+
+        boolean hasConsultation =
+                commande.getConsultation() != null
+                        && commande.getConsultation().getId() != null;
+
+        if (!hasMarche && !hasConsultation) {
+
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Veuillez sélectionner un marché"
+                    "Veuillez sélectionner un marché ou une consultation retenue"
+            );
+        }
+
+        if (hasMarche && hasConsultation) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Une commande ne peut pas être liée à un marché et une consultation en même temps"
             );
         }
 
@@ -43,65 +61,147 @@ public class CommandeService {
                 commande.getMontantCommande() == null
                         || commande.getMontantCommande() <= 0
         ) {
+
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Le montant de la commande doit être supérieur à zéro"
             );
         }
 
-        Long marcheId =
-                commande.getMarche().getId();
+        /*
+         * CAS 1 : commande issue d'un marché
+         */
+        if (hasMarche) {
 
-        Marche marche = marcheRepository
-                .findById(marcheId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Marché introuvable"
-                        )
+            Long marcheId =
+                    commande.getMarche().getId();
+
+            Marche marche =
+                    marcheRepository
+                            .findById(marcheId)
+                            .orElseThrow(() ->
+                                    new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND,
+                                            "Marché introuvable"
+                                    )
+                            );
+
+            if (marche.getMontantMarche() == null) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Le marché sélectionné ne possède pas de montant"
                 );
+            }
 
-        if (marche.getMontantMarche() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Le marché sélectionné ne possède pas de montant"
-            );
+            Double totalCommandes =
+                    commandeRepository
+                            .getTotalCommandesByMarcheId(
+                                    marcheId
+                            );
+
+            double totalActuel =
+                    totalCommandes != null
+                            ? totalCommandes
+                            : 0.0;
+
+            double nouveauTotal =
+                    totalActuel
+                            + commande.getMontantCommande();
+
+            if (nouveauTotal > marche.getMontantMarche()) {
+
+                double montantRestant =
+                        marche.getMontantMarche()
+                                - totalActuel;
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Le montant total des commandes dépasse le montant du marché. "
+                                + "Montant restant disponible : "
+                                + montantRestant
+                                + " DH"
+                );
+            }
+
+            commande.setMarche(marche);
+            commande.setConsultation(null);
         }
 
-        Double totalCommandes =
-                commandeRepository
-                        .getTotalCommandesByMarcheId(
-                                marche.getId()
-                        );
+        /*
+         * CAS 2 : commande issue d'une consultation retenue
+         */
+        if (hasConsultation) {
 
-        double totalActuel =
-                totalCommandes != null
-                        ? totalCommandes
-                        : 0.0;
+            Long consultationId =
+                    commande.getConsultation().getId();
 
-        double montantMarche =
-                marche.getMontantMarche();
+            Consultation consultation =
+                    consultationRepository
+                            .findById(consultationId)
+                            .orElseThrow(() ->
+                                    new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND,
+                                            "Consultation introuvable"
+                                    )
+                            );
 
-        double nouveauTotal =
-                totalActuel
-                        + commande.getMontantCommande();
+            if (
+                    consultation.getStatut() == null
+                            || !consultation.getStatut()
+                            .equalsIgnoreCase("RETENUE")
+            ) {
 
-        if (nouveauTotal > montantMarche) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "La consultation sélectionnée doit être RETENUE"
+                );
+            }
 
-            double montantRestant =
-                    montantMarche - totalActuel;
+            if (consultation.getMontantPropose() == null) {
 
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Le montant total des commandes dépasse "
-                            + "le montant du marché. "
-                            + "Montant restant disponible : "
-                            + montantRestant
-                            + " DH"
-            );
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "La consultation sélectionnée ne possède pas de montant"
+                );
+            }
+
+            BigDecimal totalCommandes =
+                    commandeRepository
+                            .totalCommandesParConsultation(
+                                    consultationId
+                            );
+
+            double totalActuel =
+                    totalCommandes != null
+                            ? totalCommandes.doubleValue()
+                            : 0.0;
+
+            double nouveauTotal =
+                    totalActuel
+                            + commande.getMontantCommande();
+
+            if (
+                    nouveauTotal
+                            > consultation.getMontantPropose()
+            ) {
+
+                double montantRestant =
+                        consultation.getMontantPropose()
+                                - totalActuel;
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Le montant total des commandes dépasse le montant de la consultation. "
+                                + "Montant restant disponible : "
+                                + montantRestant
+                                + " DH"
+                );
+            }
+
+            commande.setConsultation(consultation);
+            commande.setMarche(null);
         }
-
-        commande.setMarche(marche);
 
         return commandeRepository.save(commande);
     }
@@ -251,6 +351,49 @@ public class CommandeService {
 
         return Map.of(
                 "montantMarche", montantMarche,
+                "montantCommande", montantCommande,
+                "montantRestant", montantRestant
+        );
+    }
+
+    public Map<String, Double> getResumeConsultation(
+            Long consultationId
+    ) {
+
+        Consultation consultation =
+                consultationRepository
+                        .findById(consultationId)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Consultation introuvable"
+                                )
+                        );
+
+        BigDecimal totalCommandes =
+                commandeRepository
+                        .totalCommandesParConsultation(
+                                consultationId
+                        );
+
+        double montantConsultation =
+                consultation.getMontantPropose() != null
+                        ? consultation.getMontantPropose()
+                        : 0.0;
+
+        double montantCommande =
+                totalCommandes != null
+                        ? totalCommandes.doubleValue()
+                        : 0.0;
+
+        double montantRestant =
+                Math.max(
+                        montantConsultation - montantCommande,
+                        0.0
+                );
+
+        return Map.of(
+                "montantConsultation", montantConsultation,
                 "montantCommande", montantCommande,
                 "montantRestant", montantRestant
         );

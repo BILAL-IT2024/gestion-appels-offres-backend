@@ -62,6 +62,15 @@ public class CommandeController {
         return commandeService.getResumeMarche(marcheId);
     }
 
+    @GetMapping("/consultation/{consultationId}/resume")
+    public Map<String, Double> getResumeConsultation(
+            @PathVariable Long consultationId
+    ) {
+        return commandeService.getResumeConsultation(
+                consultationId
+        );
+    }
+
     @GetMapping("/export/excel")
     public ResponseEntity<InputStreamResource> exportExcel() {
 

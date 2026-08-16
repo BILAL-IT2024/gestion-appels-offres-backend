@@ -29,4 +29,8 @@ public class Commande {
 
     @ManyToOne
     private Marche marche;
+
+    @ManyToOne
+    private Consultation consultation;
+
 }

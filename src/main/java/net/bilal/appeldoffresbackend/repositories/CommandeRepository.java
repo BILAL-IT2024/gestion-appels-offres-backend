@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface CommandeRepository extends JpaRepository<Commande, Long> {
@@ -26,5 +27,15 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
 """)
     Double getTotalCommandesByMarcheId(
             @Param("marcheId") Long marcheId);
+
+    @Query("""
+    SELECT COALESCE(SUM(c.montantCommande), 0)
+    FROM Commande c
+    WHERE c.consultation.id = :consultationId
+    AND c.statut <> 'ANNULEE'
+""")
+    BigDecimal totalCommandesParConsultation(
+            @Param("consultationId") Long consultationId
+    );
 
 }
