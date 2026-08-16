@@ -249,7 +249,8 @@ public class ExcelExportService {
             header.createCell(2).setCellValue("Date Commande");
             header.createCell(3).setCellValue("Montant");
             header.createCell(4).setCellValue("Statut");
-            header.createCell(5).setCellValue("Marche");
+            header.createCell(5).setCellValue("Origine");
+            header.createCell(6).setCellValue("Marche / Consultation");
 
             List<Commande> list = commandeRepository.findAll();
 
@@ -279,15 +280,34 @@ public class ExcelExportService {
                         commande.getStatut() != null ? commande.getStatut() : ""
                 );
 
-                row.createCell(5).setCellValue(
-                        commande.getMarche() != null &&
-                                commande.getMarche().getNumeroMarche() != null
-                                ? commande.getMarche().getNumeroMarche()
-                                : ""
-                );
+                if (commande.getMarche() != null) {
+
+                    row.createCell(5).setCellValue("MARCHE");
+
+                    row.createCell(6).setCellValue(
+                            commande.getMarche().getNumeroMarche() != null
+                                    ? commande.getMarche().getNumeroMarche()
+                                    : ""
+                    );
+
+                } else if (commande.getConsultation() != null) {
+
+                    row.createCell(5).setCellValue("CONSULTATION");
+
+                    row.createCell(6).setCellValue(
+                            commande.getConsultation().getReference() != null
+                                    ? commande.getConsultation().getReference()
+                                    : ""
+                    );
+
+                } else {
+
+                    row.createCell(5).setCellValue("");
+                    row.createCell(6).setCellValue("");
+                }
             }
 
-            for (int i = 0; i < 6; i++) {
+            for (int i = 0; i < 7; i++) {
                 sheet.autoSizeColumn(i);
             }
 

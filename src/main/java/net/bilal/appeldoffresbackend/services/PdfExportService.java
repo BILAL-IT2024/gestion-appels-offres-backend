@@ -266,8 +266,22 @@ public class PdfExportService {
                     "Statut : " + commande.getStatut()));
 
             if (commande.getMarche() != null) {
+
                 document.add(new Paragraph(
-                        "Marche : " + commande.getMarche().getNumeroMarche()));
+                        "Origine : MARCHE"));
+
+                document.add(new Paragraph(
+                        "Marche : " +
+                                commande.getMarche().getNumeroMarche()));
+
+            } else if (commande.getConsultation() != null) {
+
+                document.add(new Paragraph(
+                        "Origine : CONSULTATION"));
+
+                document.add(new Paragraph(
+                        "Consultation : " +
+                                commande.getConsultation().getReference()));
             }
 
             document.close();
