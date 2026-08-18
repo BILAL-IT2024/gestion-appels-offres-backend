@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bons-livraison")
@@ -129,6 +130,14 @@ public class BonLivraisonController {
                 .body(file);
     }
 
+    @GetMapping("/commande/{commandeId}/resume")
+    public Map<String, Double> getResumeCommande(
+            @PathVariable Long commandeId
+    ) {
+        return bonLivraisonService.getResumeCommande(
+                commandeId
+        );
+    }
 
     @DeleteMapping("/{id}")
     public void deleteBonLivraison(

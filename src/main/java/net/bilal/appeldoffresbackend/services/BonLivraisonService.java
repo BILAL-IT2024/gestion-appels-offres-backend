@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -65,6 +66,50 @@ public class BonLivraisonService {
                                 )
                         );
 
+        if (
+                bonLivraison.getMontantLivraison() == null
+                        || bonLivraison.getMontantLivraison() <= 0
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant livré doit être supérieur à zéro"
+            );
+        }
+
+        Double totalLivre =
+                bonLivraisonRepository
+                        .getTotalLivreByCommandeId(
+                                commande.getId()
+                        );
+
+        double totalActuel =
+                totalLivre != null
+                        ? totalLivre
+                        : 0.0;
+
+        double nouveauTotal =
+                totalActuel
+                        + bonLivraison.getMontantLivraison();
+
+        double montantCommande =
+                commande.getMontantCommande() != null
+                        ? commande.getMontantCommande()
+                        : 0.0;
+
+        if (nouveauTotal > montantCommande) {
+
+            double montantRestant =
+                    montantCommande - totalActuel;
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant total livré dépasse le montant de la commande. "
+                            + "Montant restant à livrer : "
+                            + montantRestant
+                            + " DH"
+            );
+        }
+
         bonLivraison.setCommande(commande);
 
         return bonLivraisonRepository.save(
@@ -80,6 +125,90 @@ public class BonLivraisonService {
 
         BonLivraison bonExistant =
                 getBonLivraisonById(id);
+
+        if (
+                bonLivraison.getMontantLivraison() == null
+                        || bonLivraison.getMontantLivraison() <= 0
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant livré doit être supérieur à zéro"
+            );
+        }
+
+        if (
+                bonLivraison.getCommande() == null
+                        || bonLivraison.getCommande().getId() == null
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Veuillez sélectionner une commande"
+            );
+        }
+
+        Long nouvelleCommandeId =
+                bonLivraison.getCommande().getId();
+
+        Commande nouvelleCommande =
+                commandeRepository
+                        .findById(nouvelleCommandeId)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Commande introuvable"
+                                )
+                        );
+
+        Double totalLivre =
+                bonLivraisonRepository
+                        .getTotalLivreByCommandeId(
+                                nouvelleCommandeId
+                        );
+
+        double totalActuel =
+                totalLivre != null
+                        ? totalLivre
+                        : 0.0;
+
+        boolean memeCommande =
+                bonExistant.getCommande() != null
+                        && bonExistant
+                        .getCommande()
+                        .getId()
+                        .equals(nouvelleCommandeId);
+
+        double ancienMontant =
+                bonExistant.getMontantLivraison() != null
+                        ? bonExistant.getMontantLivraison()
+                        : 0.0;
+
+        double totalSansBonActuel =
+                memeCommande
+                        ? totalActuel - ancienMontant
+                        : totalActuel;
+
+        double nouveauTotal =
+                totalSansBonActuel
+                        + bonLivraison.getMontantLivraison();
+
+        double montantCommande =
+                nouvelleCommande.getMontantCommande() != null
+                        ? nouvelleCommande.getMontantCommande()
+                        : 0.0;
+
+        if (nouveauTotal > montantCommande) {
+
+            double montantRestant =
+                    montantCommande - totalSansBonActuel;
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant total livré dépasse le montant de la commande. "
+                            + "Montant disponible pour ce bon : "
+                            + montantRestant
+                            + " DH"
+            );
+        }
 
         bonExistant.setNumeroBon(
                 bonLivraison.getNumeroBon()
@@ -97,29 +226,11 @@ public class BonLivraisonService {
                 bonLivraison.getStatut()
         );
 
-        if (
-                bonLivraison.getCommande() != null
-                        && bonLivraison
-                        .getCommande()
-                        .getId() != null
-        ) {
+        bonExistant.setMontantLivraison(
+                bonLivraison.getMontantLivraison()
+        );
 
-            Commande commande =
-                    commandeRepository
-                            .findById(
-                                    bonLivraison
-                                            .getCommande()
-                                            .getId()
-                            )
-                            .orElseThrow(() ->
-                                    new ResponseStatusException(
-                                            HttpStatus.NOT_FOUND,
-                                            "Commande introuvable"
-                                    )
-                            );
-
-            bonExistant.setCommande(commande);
-        }
+        bonExistant.setCommande(nouvelleCommande);
 
         return bonLivraisonRepository.save(
                 bonExistant
@@ -144,6 +255,49 @@ public class BonLivraisonService {
 
         return bonLivraisonRepository
                 .findByCommandeId(commandeId);
+    }
+
+    public Map<String, Double> getResumeCommande(
+            Long commandeId
+    ) {
+
+        Commande commande =
+                commandeRepository
+                        .findById(commandeId)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Commande introuvable"
+                                )
+                        );
+
+        Double totalLivre =
+                bonLivraisonRepository
+                        .getTotalLivreByCommandeId(
+                                commandeId
+                        );
+
+        double montantCommande =
+                commande.getMontantCommande() != null
+                        ? commande.getMontantCommande()
+                        : 0.0;
+
+        double montantLivre =
+                totalLivre != null
+                        ? totalLivre
+                        : 0.0;
+
+        double montantRestant =
+                Math.max(
+                        montantCommande - montantLivre,
+                        0.0
+                );
+
+        return Map.of(
+                "montantCommande", montantCommande,
+                "montantLivre", montantLivre,
+                "montantRestant", montantRestant
+        );
     }
 
 

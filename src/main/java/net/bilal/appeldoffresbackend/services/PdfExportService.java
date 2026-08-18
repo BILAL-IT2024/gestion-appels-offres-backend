@@ -743,6 +743,18 @@ public class PdfExportService {
                     )
             );
 
+            document.add(
+                    new Paragraph(
+                            "Montant livre : "
+                                    + (
+                                    bon.getMontantLivraison() != null
+                                            ? bon.getMontantLivraison()
+                                            : 0
+                            )
+                                    + " DH"
+                    )
+            );
+
             if (bon.getCommande() != null) {
 
                 document.add(
@@ -757,10 +769,35 @@ public class PdfExportService {
 
                     document.add(
                             new Paragraph(
+                                    "Origine : MARCHE"
+                            )
+                    );
+
+                    document.add(
+                            new Paragraph(
                                     "Marche : "
                                             + bon.getCommande()
                                             .getMarche()
                                             .getNumeroMarche()
+                            )
+                    );
+
+                } else if (
+                        bon.getCommande().getConsultation() != null
+                ) {
+
+                    document.add(
+                            new Paragraph(
+                                    "Origine : CONSULTATION"
+                            )
+                    );
+
+                    document.add(
+                            new Paragraph(
+                                    "Consultation : "
+                                            + bon.getCommande()
+                                            .getConsultation()
+                                            .getReference()
                             )
                     );
                 }

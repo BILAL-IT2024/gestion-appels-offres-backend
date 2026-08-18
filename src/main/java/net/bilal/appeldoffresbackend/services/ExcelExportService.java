@@ -821,7 +821,8 @@ public class ExcelExportService {
             header.createCell(3).setCellValue("Objet");
             header.createCell(4).setCellValue("Statut");
             header.createCell(5).setCellValue("Commande");
-            header.createCell(6).setCellValue("Marche");
+            header.createCell(6).setCellValue("Montant Livre");
+            header.createCell(7).setCellValue("Marche / Consultation");
 
             List<BonLivraison> list =
                     bonLivraisonRepository.findAll();
@@ -870,19 +871,48 @@ public class ExcelExportService {
                 );
 
                 row.createCell(6).setCellValue(
+                        bon.getMontantLivraison() != null
+                                ? bon.getMontantLivraison()
+                                : 0
+                );
+
+                if (
                         bon.getCommande() != null
                                 && bon.getCommande().getMarche() != null
-                                && bon.getCommande()
-                                .getMarche()
-                                .getNumeroMarche() != null
-                                ? bon.getCommande()
-                                .getMarche()
-                                .getNumeroMarche()
-                                : ""
-                );
+                ) {
+
+                    row.createCell(7).setCellValue(
+                            bon.getCommande()
+                                    .getMarche()
+                                    .getNumeroMarche() != null
+                                    ? bon.getCommande()
+                                    .getMarche()
+                                    .getNumeroMarche()
+                                    : ""
+                    );
+
+                } else if (
+                        bon.getCommande() != null
+                                && bon.getCommande().getConsultation() != null
+                ) {
+
+                    row.createCell(7).setCellValue(
+                            bon.getCommande()
+                                    .getConsultation()
+                                    .getReference() != null
+                                    ? bon.getCommande()
+                                    .getConsultation()
+                                    .getReference()
+                                    : ""
+                    );
+
+                } else {
+
+                    row.createCell(7).setCellValue("");
+                }
             }
 
-            for (int i = 0; i < 7; i++) {
+            for (int i = 0; i < 8; i++) {
                 sheet.autoSizeColumn(i);
             }
 

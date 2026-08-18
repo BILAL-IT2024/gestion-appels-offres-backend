@@ -25,6 +25,8 @@ public class BonLivraison {
 
     private String statut;
 
+    private Double montantLivraison;
+
     @ManyToOne
     @JoinColumn(name = "commande_id", nullable = false)
     private Commande commande;
