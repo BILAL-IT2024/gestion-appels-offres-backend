@@ -346,6 +346,7 @@ public class ExcelExportService {
             header.createCell(5).setCellValue("Statut");
             header.createCell(6).setCellValue("Facture");
             header.createCell(7).setCellValue("Commande");
+            header.createCell(8).setCellValue("Marche / Consultation");
 
             List<Paiement> paiements =
                     paiementRepository.findAll();
@@ -418,10 +419,46 @@ public class ExcelExportService {
                                 .getNumeroCommande()
                                 : ""
                 );
+
+                // Marche / Consultation
+                if (
+                        paiement.getCommande() != null
+                                && paiement.getCommande().getMarche() != null
+                ) {
+
+                    row.createCell(8).setCellValue(
+                            paiement.getCommande()
+                                    .getMarche()
+                                    .getNumeroMarche() != null
+                                    ? paiement.getCommande()
+                                    .getMarche()
+                                    .getNumeroMarche()
+                                    : ""
+                    );
+
+                } else if (
+                        paiement.getCommande() != null
+                                && paiement.getCommande().getConsultation() != null
+                ) {
+
+                    row.createCell(8).setCellValue(
+                            paiement.getCommande()
+                                    .getConsultation()
+                                    .getReference() != null
+                                    ? paiement.getCommande()
+                                    .getConsultation()
+                                    .getReference()
+                                    : ""
+                    );
+
+                } else {
+
+                    row.createCell(8).setCellValue("");
+                }
             }
 
             // Ajustement automatique des 8 colonnes
-            for (int i = 0; i < 8; i++) {
+            for (int i = 0; i < 9; i++) {
                 sheet.autoSizeColumn(i);
             }
 

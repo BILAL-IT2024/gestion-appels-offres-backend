@@ -354,6 +354,49 @@ public class PdfExportService {
                                 .getCommande()
                                 .getNumeroCommande()
                 ));
+
+                if (
+                        paiement.getCommande()
+                                .getMarche() != null
+                ) {
+
+                    document.add(
+                            new Paragraph(
+                                    "Origine : MARCHE"
+                            )
+                    );
+
+                    document.add(
+                            new Paragraph(
+                                    "Marche : "
+                                            + paiement
+                                            .getCommande()
+                                            .getMarche()
+                                            .getNumeroMarche()
+                            )
+                    );
+
+                } else if (
+                        paiement.getCommande()
+                                .getConsultation() != null
+                ) {
+
+                    document.add(
+                            new Paragraph(
+                                    "Origine : CONSULTATION"
+                            )
+                    );
+
+                    document.add(
+                            new Paragraph(
+                                    "Consultation : "
+                                            + paiement
+                                            .getCommande()
+                                            .getConsultation()
+                                            .getReference()
+                            )
+                    );
+                }
             }
 
             document.close();

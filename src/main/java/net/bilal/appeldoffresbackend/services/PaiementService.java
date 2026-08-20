@@ -263,6 +263,10 @@ public class PaiementService {
                         .getFacture()
                         .getId()
                         .equals(factureId)
+                        && ancienPaiement.getStatut() != null
+                        && ancienPaiement
+                        .getStatut()
+                        .equalsIgnoreCase("VALIDE")
         ) {
 
             totalActuel -=
@@ -270,8 +274,18 @@ public class PaiementService {
         }
 
         double nouveauTotal =
-                totalActuel
-                        + paiement.getMontantPaiement();
+                totalActuel;
+
+        boolean paiementValide =
+                paiement.getStatut() != null
+                        && paiement.getStatut()
+                        .equalsIgnoreCase("VALIDE");
+
+        if (paiementValide) {
+
+            nouveauTotal +=
+                    paiement.getMontantPaiement();
+        }
 
         double montantTTC =
                 facture.getMontantTTC();
