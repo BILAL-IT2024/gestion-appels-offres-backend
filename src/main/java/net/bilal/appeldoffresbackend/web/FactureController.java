@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/factures")
@@ -152,4 +153,16 @@ public class FactureController {
         factureService
                 .deleteFacture(id);
     }
+
+    @GetMapping("/bon-livraison/{bonLivraisonId}/resume")
+    public Map<String, Double> getResumeFacturation(
+            @PathVariable Long bonLivraisonId
+    ) {
+
+        return factureService
+                .getResumeFacturation(
+                        bonLivraisonId
+                );
+    }
+
 }

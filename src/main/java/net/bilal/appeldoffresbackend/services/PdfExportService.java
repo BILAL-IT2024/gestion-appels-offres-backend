@@ -952,11 +952,18 @@ public class PdfExportService {
                             )
                     );
 
+                    // Cas 1 : commande liée à un marché
                     if (
                             facture.getBonLivraison()
                                     .getCommande()
                                     .getMarche() != null
                     ) {
+
+                        document.add(
+                                new Paragraph(
+                                        "Origine : MARCHE"
+                                )
+                        );
 
                         document.add(
                                 new Paragraph(
@@ -968,9 +975,49 @@ public class PdfExportService {
                                                 .getNumeroMarche()
                                 )
                         );
+
+                    }
+
+                    // Cas 2 : commande liée à une consultation
+                    else if (
+                            facture.getBonLivraison()
+                                    .getCommande()
+                                    .getConsultation() != null
+                    ) {
+
+                        document.add(
+                                new Paragraph(
+                                        "Origine : CONSULTATION"
+                                )
+                        );
+
+                        document.add(
+                                new Paragraph(
+                                        "Consultation : "
+                                                + facture
+                                                .getBonLivraison()
+                                                .getCommande()
+                                                .getConsultation()
+                                                .getReference()
+                                )
+                        );
                     }
                 }
             }
+
+            document.add(
+                    new Paragraph(
+                            "Montant livre : "
+                                    + (
+                                    facture.getBonLivraison()
+                                            .getMontantLivraison() != null
+                                            ? facture.getBonLivraison()
+                                            .getMontantLivraison()
+                                            : 0
+                            )
+                                    + " DH"
+                    )
+            );
 
             document.close();
 

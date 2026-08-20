@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +45,8 @@ public class FactureService {
 
         calculerMontantTTC(facture);
 
+        verifierMontantFacturable(facture);
+
         if (
                 facture.getStatut() == null
                         || facture.getStatut().isBlank()
@@ -61,6 +65,16 @@ public class FactureService {
 
         Facture factureExistante =
                 getFactureById(id);
+
+        double ancienMontantTTC =
+                factureExistante.getMontantTTC() != null
+                        ? factureExistante.getMontantTTC()
+                        : 0.0;
+
+        Long ancienBonLivraisonId =
+                factureExistante.getBonLivraison() != null
+                        ? factureExistante.getBonLivraison().getId()
+                        : null;
 
         factureExistante.setNumeroFacture(
                 facture.getNumeroFacture()
@@ -112,6 +126,12 @@ public class FactureService {
 
         calculerMontantTTC(factureExistante);
 
+        verifierMontantFacturableModification(
+                factureExistante,
+                ancienMontantTTC,
+                ancienBonLivraisonId
+        );
+
         return factureRepository.save(
                 factureExistante
         );
@@ -146,6 +166,63 @@ public class FactureService {
 
         return factureRepository
                 .findByStatutIgnoreCase(statut);
+    }
+
+    public Map<String, Double> getResumeFacturation(
+            Long bonLivraisonId
+    ) {
+
+        BonLivraison bonLivraison =
+                bonLivraisonRepository
+                        .findById(bonLivraisonId)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Bon de livraison introuvable"
+                                )
+                        );
+
+        double montantLivre =
+                bonLivraison.getMontantLivraison() != null
+                        ? bonLivraison.getMontantLivraison()
+                        : 0.0;
+
+        Double totalFacture =
+                factureRepository
+                        .getTotalFactureByBonLivraisonId(
+                                bonLivraisonId
+                        );
+
+        double montantFacture =
+                totalFacture != null
+                        ? totalFacture
+                        : 0.0;
+
+        double montantRestant =
+                Math.max(
+                        montantLivre - montantFacture,
+                        0.0
+                );
+
+        Map<String, Double> resume =
+                new HashMap<>();
+
+        resume.put(
+                "montantLivre",
+                montantLivre
+        );
+
+        resume.put(
+                "montantFacture",
+                montantFacture
+        );
+
+        resume.put(
+                "montantRestant",
+                montantRestant
+        );
+
+        return resume;
     }
 
 
@@ -224,4 +301,148 @@ public class FactureService {
                         / 100.0
         );
     }
+
+    private void verifierMontantFacturable(
+            Facture facture
+    ) {
+
+        BonLivraison bonLivraison =
+                facture.getBonLivraison();
+
+        if (
+                bonLivraison == null
+                        || bonLivraison.getId() == null
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Veuillez sélectionner un bon de livraison"
+            );
+        }
+
+        if (
+                bonLivraison.getMontantLivraison() == null
+                        || bonLivraison.getMontantLivraison() <= 0
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le bon de livraison ne possède pas de montant livrable"
+            );
+        }
+
+        Double totalFacture =
+                factureRepository
+                        .getTotalFactureByBonLivraisonId(
+                                bonLivraison.getId()
+                        );
+
+        double totalActuel =
+                totalFacture != null
+                        ? totalFacture
+                        : 0.0;
+
+        double nouveauTotal =
+                totalActuel
+                        + facture.getMontantTTC();
+
+        double montantLivraison =
+                bonLivraison.getMontantLivraison();
+
+        if (nouveauTotal > montantLivraison) {
+
+            double montantRestant =
+                    Math.max(
+                            montantLivraison - totalActuel,
+                            0.0
+                    );
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant total facturé dépasse le montant livré. "
+                            + "Montant restant à facturer : "
+                            + montantRestant
+                            + " DH"
+            );
+        }
+    }
+
+    private void verifierMontantFacturableModification(
+            Facture facture,
+            double ancienMontantTTC,
+            Long ancienBonLivraisonId
+    ) {
+
+        BonLivraison bonLivraison =
+                facture.getBonLivraison();
+
+        if (
+                bonLivraison == null
+                        || bonLivraison.getId() == null
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Veuillez sélectionner un bon de livraison"
+            );
+        }
+
+        if (
+                bonLivraison.getMontantLivraison() == null
+                        || bonLivraison.getMontantLivraison() <= 0
+        ) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le bon de livraison ne possède pas de montant livrable"
+            );
+        }
+
+        Long nouveauBonLivraisonId =
+                bonLivraison.getId();
+
+        Double totalFacture =
+                factureRepository
+                        .getTotalFactureByBonLivraisonId(
+                                nouveauBonLivraisonId
+                        );
+
+        double totalActuel =
+                totalFacture != null
+                        ? totalFacture
+                        : 0.0;
+
+        boolean memeBonLivraison =
+                ancienBonLivraisonId != null
+                        && ancienBonLivraisonId.equals(
+                        nouveauBonLivraisonId
+                );
+
+        double totalSansFactureActuelle =
+                memeBonLivraison
+                        ? totalActuel - ancienMontantTTC
+                        : totalActuel;
+
+        double nouveauTotal =
+                totalSansFactureActuelle
+                        + facture.getMontantTTC();
+
+        double montantLivraison =
+                bonLivraison.getMontantLivraison();
+
+        if (nouveauTotal > montantLivraison) {
+
+            double montantDisponible =
+                    Math.max(
+                            montantLivraison
+                                    - totalSansFactureActuelle,
+                            0.0
+                    );
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant total facturé dépasse le montant livré. "
+                            + "Montant disponible pour cette facture : "
+                            + montantDisponible
+                            + " DH"
+            );
+        }
+    }
+
 }

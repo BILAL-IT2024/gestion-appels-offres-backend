@@ -953,8 +953,9 @@ public class ExcelExportService {
             header.createCell(6).setCellValue("Montant TTC");
             header.createCell(7).setCellValue("Statut");
             header.createCell(8).setCellValue("Bon livraison");
-            header.createCell(9).setCellValue("Commande");
-            header.createCell(10).setCellValue("Marche");
+            header.createCell(9).setCellValue("Montant livre");
+            header.createCell(10).setCellValue("Commande");
+            header.createCell(11).setCellValue("Marche / Consultation");
 
             List<Facture> factures =
                     factureRepository.findAll();
@@ -1025,6 +1026,15 @@ public class ExcelExportService {
                 row.createCell(9).setCellValue(
                         facture.getBonLivraison() != null
                                 && facture.getBonLivraison()
+                                .getMontantLivraison() != null
+                                ? facture.getBonLivraison()
+                                .getMontantLivraison()
+                                : 0
+                );
+
+                row.createCell(10).setCellValue(
+                        facture.getBonLivraison() != null
+                                && facture.getBonLivraison()
                                 .getCommande() != null
                                 && facture.getBonLivraison()
                                 .getCommande()
@@ -1035,25 +1045,53 @@ public class ExcelExportService {
                                 : ""
                 );
 
-                row.createCell(10).setCellValue(
+                if (
                         facture.getBonLivraison() != null
                                 && facture.getBonLivraison().getCommande() != null
                                 && facture.getBonLivraison()
                                 .getCommande()
                                 .getMarche() != null
+                ) {
+
+                    row.createCell(11).setCellValue(
+                            facture.getBonLivraison()
+                                    .getCommande()
+                                    .getMarche()
+                                    .getNumeroMarche() != null
+                                    ? facture.getBonLivraison()
+                                    .getCommande()
+                                    .getMarche()
+                                    .getNumeroMarche()
+                                    : ""
+                    );
+
+                } else if (
+                        facture.getBonLivraison() != null
+                                && facture.getBonLivraison().getCommande() != null
                                 && facture.getBonLivraison()
                                 .getCommande()
-                                .getMarche()
-                                .getNumeroMarche() != null
-                                ? facture.getBonLivraison()
-                                .getCommande()
-                                .getMarche()
-                                .getNumeroMarche()
-                                : ""
-                );
+                                .getConsultation() != null
+                ) {
+
+                    row.createCell(11).setCellValue(
+                            facture.getBonLivraison()
+                                    .getCommande()
+                                    .getConsultation()
+                                    .getReference() != null
+                                    ? facture.getBonLivraison()
+                                    .getCommande()
+                                    .getConsultation()
+                                    .getReference()
+                                    : ""
+                    );
+
+                } else {
+
+                    row.createCell(11).setCellValue("");
+                }
             }
 
-            for (int i = 0; i < 11; i++) {
+            for (int i = 0; i < 12; i++) {
                 sheet.autoSizeColumn(i);
             }
 
