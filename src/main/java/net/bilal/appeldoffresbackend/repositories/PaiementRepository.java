@@ -20,18 +20,23 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     Double getTotalChiffreAffaire();
 
     @Query("""
-    SELECT
-    MONTH(p.datePaiement) as mois,
-    SUM(p.montantPaiement) as total
+            SELECT
+            YEAR(p.datePaiement) as annee,
+            MONTH(p.datePaiement) as mois,
+            SUM(p.montantPaiement) as total
 
-    FROM Paiement p
+            FROM Paiement p
 
-    WHERE UPPER(p.statut) = 'VALIDE'
+            WHERE UPPER(p.statut) = 'VALIDE'
 
-    GROUP BY MONTH(p.datePaiement)
+            GROUP BY
+            YEAR(p.datePaiement),
+            MONTH(p.datePaiement)
 
-    ORDER BY MONTH(p.datePaiement)
-    """)
+            ORDER BY
+            YEAR(p.datePaiement),
+            MONTH(p.datePaiement)
+              """)
     List<ChiffreAffaireMensuelDTO> getChiffreAffaireMensuel();
 
 
