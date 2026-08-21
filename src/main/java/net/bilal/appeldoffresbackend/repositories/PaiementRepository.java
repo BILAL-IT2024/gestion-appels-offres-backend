@@ -36,28 +36,57 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
 
     @Query(value = """
-        SELECT
-        c.raison_sociale as client,
-        SUM(p.montant_paiement) as total
+    SELECT
+        COALESCE(
+            c_marche.raison_sociale,
+            c_consultation.raison_sociale
+        ) AS client,
 
-        FROM paiement p
-        JOIN commande co ON p.commande_id = co.id
-        JOIN marche m ON co.marche_id = m.id
-        JOIN appel_doffres ao ON m.appel_doffres_id = ao.id
-        JOIN client c ON ao.client_id = c.id
+        SUM(p.montant_paiement) AS total
 
-        WHERE UPPER(p.statut) = 'VALIDE'
+    FROM paiement p
 
-        GROUP BY c.raison_sociale
+    JOIN commande co
+        ON p.commande_id = co.id
 
-        ORDER BY total DESC
+    LEFT JOIN marche m
+        ON co.marche_id = m.id
 
-        LIMIT 5
-        """,
+    LEFT JOIN appel_doffres ao
+        ON m.appel_doffres_id = ao.id
+
+    LEFT JOIN client c_marche
+        ON ao.client_id = c_marche.id
+
+    LEFT JOIN consultation cons
+        ON co.consultation_id = cons.id
+
+    LEFT JOIN client c_consultation
+        ON cons.client_id = c_consultation.id
+
+    WHERE UPPER(p.statut) = 'VALIDE'
+
+    AND COALESCE(
+        c_marche.id,
+        c_consultation.id
+    ) IS NOT NULL
+
+    GROUP BY COALESCE(
+    c_marche.raison_sociale,
+    c_consultation.raison_sociale
+    )
+
+    ORDER BY total DESC
+
+    LIMIT 5
+    """,
             nativeQuery = true)
     List<TopClientDTO> getTopClients();
 
-    List<Paiement> findByReferencePaiementContainingIgnoreCase(String referencePaiement);
+
+    List<Paiement> findByReferencePaiementContainingIgnoreCase(
+            String referencePaiement
+    );
 
     @Query("""
    SELECT COALESCE(SUM(p.montantPaiement), 0)
@@ -69,6 +98,7 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
             @Param("factureId") Long factureId
     );
 
+
     @Query("""
             SELECT COALESCE(SUM(p.montantPaiement), 0)
             FROM Paiement p
@@ -76,6 +106,7 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
             AND UPPER(p.statut) = 'VALIDE'
             """)
     Double getTotalEncaisseFactures();
+
 
     @Query("""
        SELECT COALESCE(SUM(p.montantPaiement), 0)
