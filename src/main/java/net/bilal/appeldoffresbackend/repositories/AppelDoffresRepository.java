@@ -1,6 +1,7 @@
 package net.bilal.appeldoffresbackend.repositories;
 
 import net.bilal.appeldoffresbackend.entities.AppelDoffres;
+import net.bilal.appeldoffresbackend.enums.Das;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
@@ -14,11 +15,20 @@ public interface AppelDoffresRepository extends JpaRepository<AppelDoffres, Long
 
     long countByStatut(String statut);
 
+    long countByDas(Das das);
+
     @Query("""
-SELECT a FROM AppelDoffres a
-WHERE a.dateLimite <= :dateLimite
-AND a.statut <> 'ADJUGE'
-""")
+    SELECT COALESCE(SUM(a.montantEstime), 0)
+    FROM AppelDoffres a
+    WHERE a.das = :das
+    """)
+    Double getMontantTotalByDas(Das das);
+
+    @Query("""
+    SELECT a FROM AppelDoffres a
+    WHERE a.dateLimite <= :dateLimite
+    AND a.statut <> 'ADJUGE'
+    """)
     List<AppelDoffres> getAppelsOffresUrgents(
             LocalDate dateLimite);
 
@@ -28,18 +38,18 @@ AND a.statut <> 'ADJUGE'
     Page<AppelDoffres> findAll(Pageable pageable);
 
     @Query("""
-SELECT a FROM AppelDoffres a
+    SELECT a FROM AppelDoffres a
 
-WHERE
-(:reference IS NULL
-OR LOWER(a.reference)
-LIKE LOWER(CONCAT('%', :reference, '%')))
+    WHERE
+    (:reference IS NULL
+    OR LOWER(a.reference)
+    LIKE LOWER(CONCAT('%', :reference, '%')))
 
-AND
+    AND
 
-(:statut IS NULL
-OR a.statut = :statut)
-""")
+    (:statut IS NULL
+    OR a.statut = :statut)
+    """)
     List<AppelDoffres> searchMultiCritere(
             String reference,
             String statut

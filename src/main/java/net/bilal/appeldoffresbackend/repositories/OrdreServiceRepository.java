@@ -1,6 +1,7 @@
 package net.bilal.appeldoffresbackend.repositories;
 
 import net.bilal.appeldoffresbackend.entities.OrdreService;
+import net.bilal.appeldoffresbackend.enums.Das;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +16,7 @@ public interface OrdreServiceRepository
 
     List<OrdreService>
     findByMarcheId(Long marcheId);
+
+    long countByMarcheDas(Das das);
+
 }

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import net.bilal.appeldoffresbackend.dtos.*;
 import net.bilal.appeldoffresbackend.entities.AppelDoffres;
 import net.bilal.appeldoffresbackend.repositories.*;
+import net.bilal.appeldoffresbackend.enums.Das;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,8 @@ public class DashboardController {
     private final CommandeRepository commandeRepository;
     private final PaiementRepository paiementRepository;
     private final FactureRepository factureRepository;
+    private final OffreRepository offreRepository;
+    private final OrdreServiceRepository ordreServiceRepository;
 
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
@@ -238,6 +241,91 @@ public class DashboardController {
                 resteTotalAEncaisser,
                 totalEncaisse
         );
+    }
+
+    @GetMapping("/stats-das")
+    @PreAuthorize("hasAnyRole('ADMIN','USER')")
+    public List<DashboardDasDTO> getStatsParDas() {
+
+        return java.util.Arrays.stream(Das.values())
+                .map(das -> {
+
+                    long nombreAppelsOffres =
+                            appelDoffresRepository.countByDas(das);
+
+                    double montantAppelsOffres =
+                            appelDoffresRepository
+                                    .getMontantTotalByDas(das);
+
+                    long nombreConsultations =
+                            consultationRepository.countByDas(das);
+
+                    double montantConsultations =
+                            consultationRepository
+                                    .getMontantTotalByDas(das);
+
+                    long nombreOffres =
+                            offreRepository.countByDas(das);
+
+                    double montantOffres =
+                            offreRepository
+                                    .getMontantTotalByDas(das);
+
+                    long nombreMarches =
+                            marcheRepository.countByDas(das);
+
+                    double montantMarches =
+                            marcheRepository
+                                    .getMontantTotalByDas(das);
+
+                    long nombreOrdresService =
+                            ordreServiceRepository
+                                    .countByMarcheDas(das);
+
+                    long nombreCommandes =
+                            commandeRepository.countByDas(das);
+
+                    double montantCommandes =
+                            commandeRepository
+                                    .getMontantTotalByDas(das);
+
+                    double montantFacture =
+                            factureRepository
+                                    .getMontantTotalByDas(das);
+
+                    double montantEncaisse =
+                            paiementRepository
+                                    .getMontantEncaisseByDas(das);
+
+                    double resteAEncaisser =
+                            Math.max(
+                                    montantFacture
+                                            - montantEncaisse,
+                                    0.0
+                            );
+
+                    resteAEncaisser =
+                            Math.round(resteAEncaisser * 100.0) / 100.0;
+
+                    return new DashboardDasDTO(
+                            das.name(),
+                            nombreAppelsOffres,
+                            montantAppelsOffres,
+                            nombreConsultations,
+                            montantConsultations,
+                            nombreOffres,
+                            montantOffres,
+                            nombreMarches,
+                            montantMarches,
+                            nombreOrdresService,
+                            nombreCommandes,
+                            montantCommandes,
+                            montantFacture,
+                            montantEncaisse,
+                            resteAEncaisser
+                    );
+                })
+                .toList();
     }
 
     @GetMapping("/alertes/appels-offres")

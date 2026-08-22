@@ -1,6 +1,7 @@
 package net.bilal.appeldoffresbackend.repositories;
 
 import net.bilal.appeldoffresbackend.entities.Facture;
+import net.bilal.appeldoffresbackend.enums.Das;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,5 +39,20 @@ public interface FactureRepository
     );
 
     long countByStatutIgnoreCase(String statut);
+
+    // Statistiques par DAS
+    @Query("""
+    SELECT COALESCE(SUM(f.montantTTC), 0)
+    FROM Facture f
+    JOIN f.bonLivraison bl
+    JOIN bl.commande c
+    LEFT JOIN c.marche m
+    LEFT JOIN c.consultation cons
+    WHERE COALESCE(m.das, cons.das) = :das
+    AND f.statut <> 'ANNULEE'
+    """)
+    Double getMontantTotalByDas(
+            @Param("das") Das das
+    );
 
 }

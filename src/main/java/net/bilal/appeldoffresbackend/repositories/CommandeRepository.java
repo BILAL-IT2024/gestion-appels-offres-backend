@@ -1,6 +1,7 @@
 package net.bilal.appeldoffresbackend.repositories;
 
 import net.bilal.appeldoffresbackend.entities.Commande;
+import net.bilal.appeldoffresbackend.enums.Das;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,7 +25,7 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     SELECT COALESCE(SUM(c.montantCommande), 0)
     FROM Commande c
     WHERE c.marche.id = :marcheId
-""")
+    """)
     Double getTotalCommandesByMarcheId(
             @Param("marcheId") Long marcheId);
 
@@ -33,9 +34,31 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
     FROM Commande c
     WHERE c.consultation.id = :consultationId
     AND c.statut <> 'ANNULEE'
-""")
+    """)
     BigDecimal totalCommandesParConsultation(
             @Param("consultationId") Long consultationId
+    );
+
+    @Query("""
+    SELECT COUNT(c)
+    FROM Commande c
+    LEFT JOIN c.marche m
+    LEFT JOIN c.consultation cons
+    WHERE COALESCE(m.das, cons.das) = :das
+    """)
+    long countByDas(
+            @Param("das") Das das
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(c.montantCommande), 0)
+    FROM Commande c
+    LEFT JOIN c.marche m
+    LEFT JOIN c.consultation cons
+    WHERE COALESCE(m.das, cons.das) = :das
+    """)
+    Double getMontantTotalByDas(
+            @Param("das") Das das
     );
 
 }
