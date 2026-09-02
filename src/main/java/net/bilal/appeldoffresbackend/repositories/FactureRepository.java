@@ -90,7 +90,7 @@ public interface FactureRepository
             c_consultation.raison_sociale
         ) AS client,
 
-        SUM(f.montant_ht) AS total
+        SUM(f.montantht) AS total
 
     FROM facture f
 
