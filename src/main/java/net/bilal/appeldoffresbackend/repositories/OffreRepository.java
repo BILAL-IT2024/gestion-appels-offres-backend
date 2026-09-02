@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface OffreRepository
         extends JpaRepository<Offre, Long> {
@@ -13,6 +14,13 @@ public interface OffreRepository
     List<Offre>
     findByReferenceContainingIgnoreCase(
             String reference
+    );
+
+    // Récupérer l'offre acceptée d'un appel d'offres
+    Optional<Offre>
+    findFirstByAppelDoffres_IdAndStatutIgnoreCase(
+            Long appelDoffresId,
+            String statut
     );
 
     // Statistiques par DAS

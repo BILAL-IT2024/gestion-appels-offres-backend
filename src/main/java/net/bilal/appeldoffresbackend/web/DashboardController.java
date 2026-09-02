@@ -97,7 +97,7 @@ public class DashboardController {
                 Math.round(paiementMoyen * 100.0) / 100.0;
 
         double chiffreAffaireTotal =
-                paiementRepository.getChiffreAffaireValide();
+                factureRepository.getChiffreAffaireTotalHT();
 
         double totalEncaisse =
                 paiementRepository.getTotalEncaisseFactures();
@@ -375,14 +375,14 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public List<ChiffreAffaireMensuelDTO> getChiffreAffaireMensuel() {
 
-        return paiementRepository.getChiffreAffaireMensuel();
+        return factureRepository.getChiffreAffaireMensuelHT();
     }
 
     @GetMapping("/top-clients")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public List<TopClientDTO> getTopClients() {
 
-        return paiementRepository.getTopClients();
+        return factureRepository.getTopClientsByChiffreAffaireHT();
     }
 
     @GetMapping("/top-appels-offres")

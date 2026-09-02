@@ -66,9 +66,9 @@ public class FactureService {
         Facture factureExistante =
                 getFactureById(id);
 
-        double ancienMontantTTC =
-                factureExistante.getMontantTTC() != null
-                        ? factureExistante.getMontantTTC()
+        double ancienMontantHT =
+                factureExistante.getMontantHT() != null
+                        ? factureExistante.getMontantHT()
                         : 0.0;
 
         Long ancienBonLivraisonId =
@@ -128,7 +128,7 @@ public class FactureService {
 
         verifierMontantFacturableModification(
                 factureExistante,
-                ancienMontantTTC,
+                ancienMontantHT,
                 ancienBonLivraisonId
         );
 
@@ -342,7 +342,7 @@ public class FactureService {
 
         double nouveauTotal =
                 totalActuel
-                        + facture.getMontantTTC();
+                        + facture.getMontantHT();
 
         double montantLivraison =
                 bonLivraison.getMontantLivraison();
@@ -367,7 +367,7 @@ public class FactureService {
 
     private void verifierMontantFacturableModification(
             Facture facture,
-            double ancienMontantTTC,
+            double ancienMontantHT,
             Long ancienBonLivraisonId
     ) {
 
@@ -416,12 +416,12 @@ public class FactureService {
 
         double totalSansFactureActuelle =
                 memeBonLivraison
-                        ? totalActuel - ancienMontantTTC
+                        ? totalActuel - ancienMontantHT
                         : totalActuel;
 
         double nouveauTotal =
                 totalSansFactureActuelle
-                        + facture.getMontantTTC();
+                        + facture.getMontantHT();
 
         double montantLivraison =
                 bonLivraison.getMontantLivraison();
