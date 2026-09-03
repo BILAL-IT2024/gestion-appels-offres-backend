@@ -63,6 +63,8 @@ public class OrdreServiceService {
 
         ordre.setMarche(marche);
 
+        verifierDatesOrdreService(ordre);
+
         return ordreServiceRepository.save(ordre);
     }
 
@@ -115,6 +117,8 @@ public class OrdreServiceService {
             ordreExistant.setMarche(marche);
         }
 
+        verifierDatesOrdreService(ordreExistant);
+
         return ordreServiceRepository.save(
                 ordreExistant
         );
@@ -153,4 +157,18 @@ public class OrdreServiceService {
 
         ordreServiceRepository.deleteById(id);
     }
+
+    private void verifierDatesOrdreService(OrdreService ordre) {
+
+        if (ordre.getDateOrdre() != null
+                && ordre.getDateDebutExecution() != null
+                && ordre.getDateDebutExecution().isBefore(ordre.getDateOrdre())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La date de début d'exécution ne peut pas être antérieure à la date de l'ordre"
+            );
+        }
+    }
+
 }
