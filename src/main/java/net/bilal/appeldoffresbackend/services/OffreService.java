@@ -73,14 +73,20 @@ public class OffreService {
 
     public void deleteOffre(Long id) {
 
-        if (!offreRepository.existsById(id)) {
+        Offre offre = offreRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Offre introuvable"
+                ));
+
+        if ("ACCEPTEE".equalsIgnoreCase(offre.getStatut())) {
             throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Offre introuvable"
+                    HttpStatus.BAD_REQUEST,
+                    "Impossible de supprimer une offre acceptée"
             );
         }
 
-        offreRepository.deleteById(id);
+        offreRepository.delete(offre);
     }
 
     private void appliquerSourceEtDas(

@@ -5,6 +5,7 @@ import net.bilal.appeldoffresbackend.entities.BonLivraison;
 import net.bilal.appeldoffresbackend.entities.Facture;
 import net.bilal.appeldoffresbackend.repositories.BonLivraisonRepository;
 import net.bilal.appeldoffresbackend.repositories.FactureRepository;
+import net.bilal.appeldoffresbackend.repositories.PaiementRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,6 +20,7 @@ public class FactureService {
 
     private final FactureRepository factureRepository;
     private final BonLivraisonRepository bonLivraisonRepository;
+    private final PaiementRepository paiementRepository;
 
 
     public List<Facture> getAllFactures() {
@@ -42,6 +44,10 @@ public class FactureService {
     public Facture saveFacture(Facture facture) {
 
         verifierBonLivraison(facture);
+
+        verifierDatesFacture(facture);
+
+        verifierTva(facture);
 
         calculerMontantTTC(facture);
 
@@ -124,13 +130,21 @@ public class FactureService {
             );
         }
 
+        verifierDatesFacture(factureExistante);
+
+        verifierTva(factureExistante);
+
         calculerMontantTTC(factureExistante);
+
+        verifierMontantFactureParRapportAuxPaiements(factureExistante);
 
         verifierMontantFacturableModification(
                 factureExistante,
                 ancienMontantHT,
                 ancienBonLivraisonId
         );
+
+        recalculerStatutFacture(factureExistante);
 
         return factureRepository.save(
                 factureExistante
@@ -441,6 +455,111 @@ public class FactureService {
                             + "Montant disponible pour cette facture : "
                             + montantDisponible
                             + " DH"
+            );
+        }
+    }
+
+    private void recalculerStatutFacture(Facture facture) {
+
+        if (facture.getId() == null) {
+            return;
+        }
+
+        // Une facture annulée reste annulée
+        if ("ANNULEE".equalsIgnoreCase(facture.getStatut())) {
+            return;
+        }
+
+        Double totalPaiements =
+                paiementRepository
+                        .getTotalPaiementsByFactureId(
+                                facture.getId()
+                        );
+
+        double montantPaye =
+                totalPaiements != null
+                        ? totalPaiements
+                        : 0.0;
+
+        double montantTTC =
+                facture.getMontantTTC() != null
+                        ? facture.getMontantTTC()
+                        : 0.0;
+
+        if (montantPaye >= montantTTC && montantTTC > 0) {
+
+            facture.setStatut("PAYEE");
+
+        } else if (montantPaye > 0) {
+
+            facture.setStatut("PARTIELLEMENT_PAYEE");
+
+        } else if (
+                "PAYEE".equalsIgnoreCase(facture.getStatut())
+                        || "PARTIELLEMENT_PAYEE".equalsIgnoreCase(
+                        facture.getStatut()
+                )
+        ) {
+
+            facture.setStatut("EMISE");
+        }
+
+    }
+
+    private void verifierMontantFactureParRapportAuxPaiements(Facture facture) {
+
+        if (facture.getId() == null) {
+            return;
+        }
+
+        Double totalPaiements =
+                paiementRepository.getTotalPaiementsByFactureId(
+                        facture.getId()
+                );
+
+        double montantPaye =
+                totalPaiements != null
+                        ? totalPaiements
+                        : 0.0;
+
+        double montantTTC =
+                facture.getMontantTTC() != null
+                        ? facture.getMontantTTC()
+                        : 0.0;
+
+        if (montantTTC + 0.001 < montantPaye) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le montant TTC de la facture ne peut pas être inférieur "
+                            + "au montant déjà payé : "
+                            + montantPaye
+                            + " DH"
+            );
+        }
+    }
+
+    private void verifierDatesFacture(Facture facture) {
+
+        if (facture.getDateFacture() != null
+                && facture.getDateEcheance() != null
+                && facture.getDateEcheance().isBefore(facture.getDateFacture())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La date d'échéance ne peut pas être antérieure à la date de facture"
+            );
+        }
+    }
+
+    private void verifierTva(Facture facture) {
+
+        if (facture.getTva() != null
+                && (facture.getTva() < 0 || facture.getTva() > 100)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Le taux de TVA doit être compris entre 0 et 100 %"
             );
         }
     }
