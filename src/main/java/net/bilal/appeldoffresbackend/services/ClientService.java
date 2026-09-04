@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import net.bilal.appeldoffresbackend.entities.Client;
 import net.bilal.appeldoffresbackend.repositories.ClientRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -18,6 +20,7 @@ public class ClientService {
     }
 
     public Client saveClient(Client client) {
+        verifierClient(client);
         return clientRepository.save(client);
     }
 
@@ -26,6 +29,7 @@ public class ClientService {
     }
 
     public Client updateClient(Long id, Client client) {
+        verifierClient(client);
         client.setId(id);
         return clientRepository.save(client);
     }
@@ -37,4 +41,17 @@ public class ClientService {
     public void deleteClient(Long id) {
         clientRepository.deleteById(id);
     }
+
+    private void verifierClient(Client client) {
+
+        if (client.getRaisonSociale() == null
+                || client.getRaisonSociale().isBlank()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La raison sociale est obligatoire"
+            );
+        }
+    }
+
 }
