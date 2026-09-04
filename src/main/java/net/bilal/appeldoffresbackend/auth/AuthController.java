@@ -36,7 +36,14 @@ public class AuthController {
                         request.getUsername()
                 );
 
-        return new LoginResponse(token);
+        AppUser appUser = appUserRepository
+                .findByUsername(request.getUsername())
+                .orElseThrow();
+
+        return new LoginResponse(
+                token,
+                appUser.getRole()
+        );
     }
 
     @PostMapping("/register")
