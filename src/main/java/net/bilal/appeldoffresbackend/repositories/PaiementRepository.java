@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface PaiementRepository extends JpaRepository<Paiement, Long> {
@@ -15,77 +16,73 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     long countByStatutIgnoreCase(String statut);
 
     @Query("""
-            SELECT COALESCE(SUM(p.montantPaiement),0)
-            FROM Paiement p
-            """)
+        SELECT COALESCE(SUM(p.montantPaiement), 0)
+        FROM Paiement p
+        """)
     Double getTotalChiffreAffaire();
 
     @Query("""
-            SELECT
+        SELECT
             YEAR(p.datePaiement) as annee,
             MONTH(p.datePaiement) as mois,
             SUM(p.montantPaiement) as total
-
-            FROM Paiement p
-
-            WHERE UPPER(p.statut) = 'VALIDE'
-
-            GROUP BY
+        FROM Paiement p
+        WHERE UPPER(p.statut) = 'VALIDE'
+        GROUP BY
             YEAR(p.datePaiement),
             MONTH(p.datePaiement)
-
-            ORDER BY
+        ORDER BY
             YEAR(p.datePaiement),
             MONTH(p.datePaiement)
-              """)
+        """)
     List<ChiffreAffaireMensuelDTO> getChiffreAffaireMensuel();
 
 
     @Query(value = """
-    SELECT
-        COALESCE(
+        SELECT
+            COALESCE(
+                c_marche.raison_sociale,
+                c_consultation.raison_sociale
+            ) AS client,
+
+            SUM(p.montant_paiement) AS total
+
+        FROM paiement p
+
+        JOIN commande co
+            ON p.commande_id = co.id
+
+        LEFT JOIN marche m
+            ON co.marche_id = m.id
+
+        LEFT JOIN appel_doffres ao
+            ON m.appel_doffres_id = ao.id
+
+        LEFT JOIN client c_marche
+            ON ao.client_id = c_marche.id
+
+        LEFT JOIN consultation cons
+            ON co.consultation_id = cons.id
+
+        LEFT JOIN client c_consultation
+            ON cons.client_id = c_consultation.id
+
+        WHERE UPPER(p.statut) = 'VALIDE'
+
+        AND COALESCE(
+            c_marche.id,
+            c_consultation.id
+        ) IS NOT NULL
+
+        GROUP BY COALESCE(
             c_marche.raison_sociale,
             c_consultation.raison_sociale
-        ) AS client,
+        )
 
-        SUM(p.montant_paiement) AS total
+        ORDER BY total DESC
 
-    FROM paiement p
-
-    JOIN commande co
-        ON p.commande_id = co.id
-
-    LEFT JOIN marche m
-        ON co.marche_id = m.id
-
-    LEFT JOIN appel_doffres ao
-        ON m.appel_doffres_id = ao.id
-
-    LEFT JOIN client c_marche
-        ON ao.client_id = c_marche.id
-
-    LEFT JOIN consultation cons
-        ON co.consultation_id = cons.id
-
-    LEFT JOIN client c_consultation
-        ON cons.client_id = c_consultation.id
-
-    WHERE UPPER(p.statut) = 'VALIDE'
-
-    AND COALESCE(
-        c_marche.id,
-        c_consultation.id
-    ) IS NOT NULL
-
-    GROUP BY COALESCE(
-    c_marche.raison_sociale,
-    c_consultation.raison_sociale
-    )
-
-    ORDER BY total DESC
-
-    LIMIT 5
-    """,
+        LIMIT 5
+        """,
             nativeQuery = true)
     List<TopClientDTO> getTopClients();
 
@@ -94,47 +91,111 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
             String referencePaiement
     );
 
+
     @Query("""
-   SELECT COALESCE(SUM(p.montantPaiement), 0)
-   FROM Paiement p
-   WHERE p.facture.id = :factureId
-   AND UPPER(p.statut) = 'VALIDE'
-   """)
+        SELECT COALESCE(SUM(p.montantPaiement), 0)
+        FROM Paiement p
+        WHERE p.facture.id = :factureId
+        AND UPPER(p.statut) = 'VALIDE'
+        """)
     Double getTotalPaiementsByFactureId(
             @Param("factureId") Long factureId
     );
 
 
     @Query("""
-            SELECT COALESCE(SUM(p.montantPaiement), 0)
-            FROM Paiement p
-            WHERE p.facture IS NOT NULL
-            AND UPPER(p.statut) = 'VALIDE'
-            """)
+        SELECT COALESCE(SUM(p.montantPaiement), 0)
+        FROM Paiement p
+        WHERE p.facture IS NOT NULL
+        AND UPPER(p.statut) = 'VALIDE'
+        """)
     Double getTotalEncaisseFactures();
 
 
     @Query("""
-       SELECT COALESCE(SUM(p.montantPaiement), 0)
-       FROM Paiement p
-       WHERE UPPER(p.statut) = 'VALIDE'
-       """)
+        SELECT COALESCE(SUM(p.montantPaiement), 0)
+        FROM Paiement p
+        WHERE UPPER(p.statut) = 'VALIDE'
+        """)
     Double getChiffreAffaireValide();
+
 
     List<Paiement> findByFactureId(Long factureId);
 
+
     // Statistiques par DAS
     @Query("""
-    SELECT COALESCE(SUM(p.montantPaiement), 0)
-    FROM Paiement p
-    JOIN p.commande c
-    LEFT JOIN c.marche m
-    LEFT JOIN c.consultation cons
-    WHERE UPPER(p.statut) = 'VALIDE'
-    AND COALESCE(m.das, cons.das) = :das
-    """)
+        SELECT COALESCE(SUM(p.montantPaiement), 0)
+        FROM Paiement p
+        JOIN p.commande c
+        LEFT JOIN c.marche m
+        LEFT JOIN c.consultation cons
+        WHERE UPPER(p.statut) = 'VALIDE'
+        AND COALESCE(m.das, cons.das) = :das
+        """)
     Double getMontantEncaisseByDas(
             @Param("das") Das das
     );
 
+
+    // =========================================================
+    // STATISTIQUES DASHBOARD PAR PERIODE
+    // Date de référence : datePaiement
+    // dateDebut incluse / dateFin exclue
+    // =========================================================
+
+    @Query("""
+        SELECT COUNT(p)
+        FROM Paiement p
+        WHERE p.datePaiement >= :dateDebut
+        AND p.datePaiement < :dateFin
+        """)
+    long countByPeriode(
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
+
+    @Query("""
+        SELECT COUNT(p)
+        FROM Paiement p
+        WHERE p.datePaiement >= :dateDebut
+        AND p.datePaiement < :dateFin
+        AND UPPER(p.statut) = UPPER(:statut)
+        """)
+    long countByStatutAndPeriode(
+            @Param("statut") String statut,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
+
+    // Somme des paiements VALIDES de la période
+    @Query("""
+        SELECT COALESCE(SUM(p.montantPaiement), 0)
+        FROM Paiement p
+        WHERE p.datePaiement >= :dateDebut
+        AND p.datePaiement < :dateFin
+        AND UPPER(p.statut) = 'VALIDE'
+        """)
+    Double getMontantEncaisseByPeriode(
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
+
+    // Somme des paiements VALIDES rattachés à une facture
+    // utilisée pour rester cohérent avec le calcul financier du Dashboard
+    @Query("""
+        SELECT COALESCE(SUM(p.montantPaiement), 0)
+        FROM Paiement p
+        WHERE p.datePaiement >= :dateDebut
+        AND p.datePaiement < :dateFin
+        AND p.facture IS NOT NULL
+        AND UPPER(p.statut) = 'VALIDE'
+        """)
+    Double getTotalEncaisseFacturesByPeriode(
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
 }

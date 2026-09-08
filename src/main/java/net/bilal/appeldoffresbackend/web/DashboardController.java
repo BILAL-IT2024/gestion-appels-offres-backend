@@ -32,213 +32,1002 @@ public class DashboardController {
 
     @GetMapping("/stats")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
-    public DashboardStatsDTO getDashboardStats() {
+    public DashboardStatsDTO getDashboardStats(
 
-        long totalClients = clientRepository.count();
-        long totalAppelsOffres = appelDoffresRepository.count();
-        long totalConsultations = consultationRepository.count();
+            @RequestParam(required = false) Integer annee,
+            @RequestParam(required = false) Integer mois
+    ) {
 
-        long consultationsRetenues =
-                consultationRepository.countByStatutIgnoreCase("RETENUE");
+        // =========================================================
+        // VALIDATION DE LA PERIODE
+        // =========================================================
 
-        long consultationsEnCours =
-                consultationRepository.countByStatutIgnoreCase("EN_COURS");
+        if (mois != null && annee == null) {
+            throw new IllegalArgumentException(
+                    "L'année est obligatoire lorsqu'un mois est sélectionné."
+            );
+        }
 
-        long consultationsRefusees =
-                consultationRepository.countByStatutIgnoreCase("REFUSEE");
+        if (mois != null && (mois < 1 || mois > 12)) {
+            throw new IllegalArgumentException(
+                    "Le mois doit être compris entre 1 et 12."
+            );
+        }
 
-        long totalMarches = marcheRepository.count();
 
-        long marchesEnCours =
-                marcheRepository.countByStatutIgnoreCase("EN_COURS");
+        boolean filtrePeriode = annee != null;
 
-        long marchesTermines =
-                marcheRepository.countByStatutIgnoreCase("TERMINE");
+        LocalDate dateDebut = null;
+        LocalDate dateFin = null;
 
-        double montantTotalMarches =
-                marcheRepository.getMontantTotalMarches();
 
-        long totalCommandes = commandeRepository.count();
+        if (filtrePeriode) {
 
-        long commandesEnCours =
-                commandeRepository.countByStatutIgnoreCase("EN_COURS");
+            if (mois != null) {
 
-        long commandesLivrees =
-                commandeRepository.countByStatutIgnoreCase("LIVREE");
+                // Exemple :
+                // septembre 2026
+                // 01/09/2026 <= date < 01/10/2026
 
-        double montantTotalCommandes =
-                commandeRepository.getMontantTotalCommandes();
+                dateDebut = LocalDate.of(
+                        annee,
+                        mois,
+                        1
+                );
 
-        long totalPaiements = paiementRepository.count();
+                dateFin = dateDebut.plusMonths(1);
 
-        long paiementsValides =
-                paiementRepository.countByStatutIgnoreCase("VALIDE");
+            } else {
 
-        long paiementsEnAttente =
-                paiementRepository.countByStatutIgnoreCase("EN_ATTENTE");
+                // Exemple :
+                // année 2026
+                // 01/01/2026 <= date < 01/01/2027
 
-        long paiementsAnnules =
-                paiementRepository.countByStatutIgnoreCase("ANNULE");
+                dateDebut = LocalDate.of(
+                        annee,
+                        1,
+                        1
+                );
+
+                dateFin = dateDebut.plusYears(1);
+            }
+        }
+
+
+        // =========================================================
+        // CLIENTS
+        //
+        // Client ne possède actuellement pas de dateCreation.
+        // Le nombre de clients reste donc GLOBAL.
+        // =========================================================
+
+        long totalClients =
+                clientRepository.count();
+
+
+        // =========================================================
+        // APPELS D'OFFRES
+        // Date de référence : datePublication
+        // =========================================================
+
+        long totalAppelsOffres;
+
+        long aoAdjuges;
+
+        long aoEnCours;
+
+        long aoAnnules;
+
+        double montantTotalAO;
+
+
+        if (filtrePeriode) {
+
+            totalAppelsOffres =
+                    appelDoffresRepository.countByPeriode(
+                            dateDebut,
+                            dateFin
+                    );
+
+            aoAdjuges =
+                    appelDoffresRepository
+                            .countByStatutAndPeriode(
+                                    "ADJUGE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            aoEnCours =
+                    appelDoffresRepository
+                            .countByStatutAndPeriode(
+                                    "EN_COURS",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            aoAnnules =
+                    appelDoffresRepository
+                            .countByStatutAndPeriode(
+                                    "ANNULE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            montantTotalAO =
+                    appelDoffresRepository
+                            .getMontantTotalByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+        } else {
+
+            totalAppelsOffres =
+                    appelDoffresRepository.count();
+
+            aoAdjuges =
+                    appelDoffresRepository
+                            .countByStatut("ADJUGE");
+
+            aoEnCours =
+                    appelDoffresRepository
+                            .countByStatut("EN_COURS");
+
+            aoAnnules =
+                    appelDoffresRepository
+                            .countByStatut("ANNULE");
+
+            montantTotalAO =
+                    appelDoffresRepository.findAll()
+                            .stream()
+                            .filter(
+                                    ao ->
+                                            ao.getMontantEstime() != null
+                            )
+                            .mapToDouble(
+                                    AppelDoffres::getMontantEstime
+                            )
+                            .sum();
+        }
+
+
+        // =========================================================
+        // TAUX DE REUSSITE AO
+        // =========================================================
+
+        double tauxReussite = 0;
+
+        if (totalAppelsOffres > 0) {
+
+            tauxReussite =
+                    ((double) aoAdjuges
+                            / totalAppelsOffres)
+                            * 100;
+        }
+
+        tauxReussite =
+                Math.round(
+                        tauxReussite * 100.0
+                ) / 100.0;
+
+
+        // =========================================================
+        // CONSULTATIONS
+        // Date de référence : dateReception
+        // =========================================================
+
+        long totalConsultations;
+
+        long consultationsRetenues;
+
+        long consultationsEnCours;
+
+        long consultationsRefusees;
+
+
+        if (filtrePeriode) {
+
+            totalConsultations =
+                    consultationRepository
+                            .countByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            consultationsRetenues =
+                    consultationRepository
+                            .countByStatutAndPeriode(
+                                    "RETENUE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            consultationsEnCours =
+                    consultationRepository
+                            .countByStatutAndPeriode(
+                                    "EN_COURS",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            consultationsRefusees =
+                    consultationRepository
+                            .countByStatutAndPeriode(
+                                    "REFUSEE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+        } else {
+
+            totalConsultations =
+                    consultationRepository.count();
+
+            consultationsRetenues =
+                    consultationRepository
+                            .countByStatutIgnoreCase(
+                                    "RETENUE"
+                            );
+
+            consultationsEnCours =
+                    consultationRepository
+                            .countByStatutIgnoreCase(
+                                    "EN_COURS"
+                            );
+
+            consultationsRefusees =
+                    consultationRepository
+                            .countByStatutIgnoreCase(
+                                    "REFUSEE"
+                            );
+        }
+
+
+        // =========================================================
+        // MARCHES
+        // Date de référence : dateDebut
+        // =========================================================
+
+        long totalMarches;
+
+        long marchesEnCours;
+
+        long marchesTermines;
+
+        double montantTotalMarches;
+
+
+        if (filtrePeriode) {
+
+            totalMarches =
+                    marcheRepository
+                            .countByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            marchesEnCours =
+                    marcheRepository
+                            .countByStatutAndPeriode(
+                                    "EN_COURS",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            marchesTermines =
+                    marcheRepository
+                            .countByStatutAndPeriode(
+                                    "TERMINE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            montantTotalMarches =
+                    marcheRepository
+                            .getMontantTotalByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+        } else {
+
+            totalMarches =
+                    marcheRepository.count();
+
+            marchesEnCours =
+                    marcheRepository
+                            .countByStatutIgnoreCase(
+                                    "EN_COURS"
+                            );
+
+            marchesTermines =
+                    marcheRepository
+                            .countByStatutIgnoreCase(
+                                    "TERMINE"
+                            );
+
+            montantTotalMarches =
+                    marcheRepository
+                            .getMontantTotalMarches();
+        }
+
+
+        // =========================================================
+        // COMMANDES
+        // Date de référence : dateCommande
+        // =========================================================
+
+        long totalCommandes;
+
+        long commandesEnCours;
+
+        long commandesLivrees;
+
+        double montantTotalCommandes;
+
+
+        if (filtrePeriode) {
+
+            totalCommandes =
+                    commandeRepository
+                            .countByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            commandesEnCours =
+                    commandeRepository
+                            .countByStatutAndPeriode(
+                                    "EN_COURS",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            commandesLivrees =
+                    commandeRepository
+                            .countByStatutAndPeriode(
+                                    "LIVREE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            montantTotalCommandes =
+                    commandeRepository
+                            .getMontantTotalByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+        } else {
+
+            totalCommandes =
+                    commandeRepository.count();
+
+            commandesEnCours =
+                    commandeRepository
+                            .countByStatutIgnoreCase(
+                                    "EN_COURS"
+                            );
+
+            commandesLivrees =
+                    commandeRepository
+                            .countByStatutIgnoreCase(
+                                    "LIVREE"
+                            );
+
+            montantTotalCommandes =
+                    commandeRepository
+                            .getMontantTotalCommandes();
+        }
+
+
+        // =========================================================
+        // PAIEMENTS
+        // Date de référence : datePaiement
+        // =========================================================
+
+        long totalPaiements;
+
+        long paiementsValides;
+
+        long paiementsEnAttente;
+
+        long paiementsAnnules;
+
+        double totalEncaisse;
+
+
+        if (filtrePeriode) {
+
+            totalPaiements =
+                    paiementRepository
+                            .countByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            paiementsValides =
+                    paiementRepository
+                            .countByStatutAndPeriode(
+                                    "VALIDE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            paiementsEnAttente =
+                    paiementRepository
+                            .countByStatutAndPeriode(
+                                    "EN_ATTENTE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            paiementsAnnules =
+                    paiementRepository
+                            .countByStatutAndPeriode(
+                                    "ANNULE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            // Seulement paiements VALIDES,
+            // rattachés à une facture
+            totalEncaisse =
+                    paiementRepository
+                            .getTotalEncaisseFacturesByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+        } else {
+
+            totalPaiements =
+                    paiementRepository.count();
+
+            paiementsValides =
+                    paiementRepository
+                            .countByStatutIgnoreCase(
+                                    "VALIDE"
+                            );
+
+            paiementsEnAttente =
+                    paiementRepository
+                            .countByStatutIgnoreCase(
+                                    "EN_ATTENTE"
+                            );
+
+            paiementsAnnules =
+                    paiementRepository
+                            .countByStatutIgnoreCase(
+                                    "ANNULE"
+                            );
+
+            totalEncaisse =
+                    paiementRepository
+                            .getTotalEncaisseFactures();
+        }
+
+
+        // =========================================================
+        // PAIEMENT MOYEN
+        // =========================================================
 
         double paiementMoyen = 0;
 
+
         if (paiementsValides > 0) {
-            paiementMoyen =
-                    paiementRepository.getChiffreAffaireValide()
-                            / paiementsValides;
+
+            if (filtrePeriode) {
+
+                paiementMoyen =
+                        paiementRepository
+                                .getMontantEncaisseByPeriode(
+                                        dateDebut,
+                                        dateFin
+                                )
+                                / paiementsValides;
+
+            } else {
+
+                paiementMoyen =
+                        paiementRepository
+                                .getChiffreAffaireValide()
+                                / paiementsValides;
+            }
         }
+
 
         paiementMoyen =
                 Math.round(
                         paiementMoyen * 100.0
                 ) / 100.0;
 
-        paiementMoyen =
-                Math.round(paiementMoyen * 100.0) / 100.0;
 
-        double chiffreAffaireTotal =
-                factureRepository.getChiffreAffaireTotalHT();
+        // =========================================================
+        // FACTURES
+        // Date de référence : dateFacture
+        // =========================================================
 
-        double totalEncaisse =
-                paiementRepository.getTotalEncaisseFactures();
+        double chiffreAffaireTotal;
 
-        double montantTotalFacture =
-                factureRepository.getTotalFacture();
+        double montantTotalFacture;
 
-        long totalFactures =
-                factureRepository.count();
+        long totalFactures;
 
-        long facturesPayees =
-                factureRepository
-                        .countByStatutIgnoreCase("PAYEE");
+        long facturesPayees;
 
-        long facturesPartiellementPayees =
-                factureRepository
-                        .countByStatutIgnoreCase(
-                                "PARTIELLEMENT_PAYEE"
-                        );
+        long facturesPartiellementPayees;
 
-        long facturesEmises =
-                factureRepository
-                        .countByStatutIgnoreCase("EMISE");
+        long facturesEmises;
 
-        double resteTotalAEncaisser =
-                montantTotalFacture
-                        - totalEncaisse;
+
+        if (filtrePeriode) {
+
+            chiffreAffaireTotal =
+                    factureRepository
+                            .getChiffreAffaireHTByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            montantTotalFacture =
+                    factureRepository
+                            .getMontantFactureTTCByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            totalFactures =
+                    factureRepository
+                            .countByPeriode(
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            facturesPayees =
+                    factureRepository
+                            .countByStatutAndPeriode(
+                                    "PAYEE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            facturesPartiellementPayees =
+                    factureRepository
+                            .countByStatutAndPeriode(
+                                    "PARTIELLEMENT_PAYEE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+            facturesEmises =
+                    factureRepository
+                            .countByStatutAndPeriode(
+                                    "EMISE",
+                                    dateDebut,
+                                    dateFin
+                            );
+
+        } else {
+
+            chiffreAffaireTotal =
+                    factureRepository
+                            .getChiffreAffaireTotalHT();
+
+            montantTotalFacture =
+                    factureRepository
+                            .getTotalFacture();
+
+            totalFactures =
+                    factureRepository.count();
+
+            facturesPayees =
+                    factureRepository
+                            .countByStatutIgnoreCase(
+                                    "PAYEE"
+                            );
+
+            facturesPartiellementPayees =
+                    factureRepository
+                            .countByStatutIgnoreCase(
+                                    "PARTIELLEMENT_PAYEE"
+                            );
+
+            facturesEmises =
+                    factureRepository
+                            .countByStatutIgnoreCase(
+                                    "EMISE"
+                            );
+        }
+
+
+        // =========================================================
+        // RESTE A ENCAISSER
+        // =========================================================
+
+        double resteTotalAEncaisser;
+
+
+        if (filtrePeriode) {
+
+            /*
+             * IMPORTANT :
+             *
+             * On prend les factures appartenant à la période,
+             * puis on retire tous leurs paiements VALIDES.
+             *
+             * Ainsi, une facture d'août payée en septembre
+             * reste rattachée à la facture d'août pour le calcul
+             * du "reste à encaisser" de cette facture.
+             */
+
+            final LocalDate debut = dateDebut;
+            final LocalDate fin = dateFin;
+
+
+            resteTotalAEncaisser =
+                    factureRepository.findAll()
+                            .stream()
+
+                            .filter(f ->
+                                    f.getDateFacture() != null
+                            )
+
+                            .filter(f ->
+                                    !f.getDateFacture()
+                                            .isBefore(debut)
+                            )
+
+                            .filter(f ->
+                                    f.getDateFacture()
+                                            .isBefore(fin)
+                            )
+
+                            .filter(f ->
+                                    f.getStatut() == null
+                                            ||
+                                            !f.getStatut()
+                                                    .equalsIgnoreCase(
+                                                            "ANNULEE"
+                                                    )
+                            )
+
+                            .mapToDouble(f -> {
+
+                                double montantTTC =
+                                        f.getMontantTTC() != null
+                                                ? f.getMontantTTC()
+                                                : 0.0;
+
+
+                                double dejaPaye =
+                                        paiementRepository
+                                                .getTotalPaiementsByFactureId(
+                                                        f.getId()
+                                                );
+
+
+                                return Math.max(
+                                        montantTTC - dejaPaye,
+                                        0
+                                );
+                            })
+
+                            .sum();
+
+        } else {
+
+            resteTotalAEncaisser =
+                    montantTotalFacture
+                            - totalEncaisse;
+        }
+
 
         if (resteTotalAEncaisser < 0) {
             resteTotalAEncaisser = 0;
         }
+
 
         resteTotalAEncaisser =
                 Math.round(
                         resteTotalAEncaisser * 100.0
                 ) / 100.0;
 
-        long totalAO = appelDoffresRepository.count();
 
-        long aoAdjuges =
-                appelDoffresRepository.countByStatut("ADJUGE");
+        // =========================================================
+        // TOP CLIENT AO
+        // =========================================================
 
-        double tauxReussite = 0;
+        String topClient;
 
-        if (totalAO > 0) {
-            tauxReussite =
-                    ((double) aoAdjuges / totalAO) * 100;
+
+        if (filtrePeriode) {
+
+            final LocalDate debut = dateDebut;
+            final LocalDate fin = dateFin;
+
+
+            topClient =
+                    appelDoffresRepository.findAll()
+                            .stream()
+
+                            .filter(ao ->
+                                    ao.getDatePublication() != null
+                            )
+
+                            .filter(ao ->
+                                    !ao.getDatePublication()
+                                            .isBefore(debut)
+                            )
+
+                            .filter(ao ->
+                                    ao.getDatePublication()
+                                            .isBefore(fin)
+                            )
+
+                            .filter(ao ->
+                                    ao.getClient() != null
+                            )
+
+                            .collect(
+                                    java.util.stream.Collectors.groupingBy(
+                                            ao ->
+                                                    ao.getClient()
+                                                            .getRaisonSociale(),
+
+                                            java.util.stream.Collectors
+                                                    .counting()
+                                    )
+                            )
+
+                            .entrySet()
+                            .stream()
+
+                            .max(
+                                    Map.Entry.comparingByValue()
+                            )
+
+                            .map(
+                                    Map.Entry::getKey
+                            )
+
+                            .orElse(
+                                    "Aucun client"
+                            );
+
+        } else {
+
+            topClient =
+                    appelDoffresRepository.findAll()
+                            .stream()
+
+                            .filter(ao ->
+                                    ao.getClient() != null
+                            )
+
+                            .collect(
+                                    java.util.stream.Collectors.groupingBy(
+                                            ao ->
+                                                    ao.getClient()
+                                                            .getRaisonSociale(),
+
+                                            java.util.stream.Collectors
+                                                    .counting()
+                                    )
+                            )
+
+                            .entrySet()
+                            .stream()
+
+                            .max(
+                                    Map.Entry.comparingByValue()
+                            )
+
+                            .map(
+                                    Map.Entry::getKey
+                            )
+
+                            .orElse(
+                                    "Aucun client"
+                            );
         }
 
-        tauxReussite =
-                Math.round(tauxReussite * 100.0) / 100.0;
 
-        long aoEnCours =
-                appelDoffresRepository.countByStatut("EN_COURS");
+        // =========================================================
+        // AO URGENTS / EN RETARD
+        // =========================================================
 
-        long aoAnnules =
-                appelDoffresRepository.countByStatut("ANNULE");
+        LocalDate today =
+                LocalDate.now();
 
-        double montantTotalAO =
-                appelDoffresRepository.findAll()
-                        .stream()
-                        .filter(ao -> ao.getMontantEstime() != null)
-                        .mapToDouble(AppelDoffres::getMontantEstime)
-                        .sum();
 
-        String topClient =
-                appelDoffresRepository.findAll()
-                        .stream()
-                        .filter(ao -> ao.getClient() != null)
-                        .collect(
-                                java.util.stream.Collectors.groupingBy(
-                                        ao -> ao.getClient().getRaisonSociale(),
-                                        java.util.stream.Collectors.counting()
-                                )
-                        )
-                        .entrySet()
-                        .stream()
-                        .max(Map.Entry.comparingByValue())
-                        .map(Map.Entry::getKey)
-                        .orElse("Aucun client");
+        long aoEnRetard;
 
-        LocalDate today = LocalDate.now();
+        long aoUrgents;
 
-        long aoEnRetard =
-                appelDoffresRepository.findAll()
-                        .stream()
-                        .filter(ao ->
-                                ao.getDateLimite() != null
-                                        &&
-                                        ao.getDateLimite().isBefore(today)
-                        )
-                        .count();
 
-        long aoUrgents =
-                appelDoffresRepository.findAll()
-                        .stream()
-                        .filter(ao ->
-                                ao.getDateLimite() != null
-                                        &&
-                                        !ao.getDateLimite().isBefore(today)
-                                        &&
-                                        ao.getDateLimite()
-                                                .isBefore(today.plusDays(8))
-                        )
-                        .count();
+        if (filtrePeriode) {
+
+            final LocalDate debut = dateDebut;
+            final LocalDate fin = dateFin;
+
+
+            aoEnRetard =
+                    appelDoffresRepository.findAll()
+                            .stream()
+
+                            .filter(ao ->
+                                    ao.getDatePublication() != null
+                            )
+
+                            .filter(ao ->
+                                    !ao.getDatePublication()
+                                            .isBefore(debut)
+                            )
+
+                            .filter(ao ->
+                                    ao.getDatePublication()
+                                            .isBefore(fin)
+                            )
+
+                            .filter(ao ->
+                                    ao.getDateLimite() != null
+                            )
+
+                            .filter(ao ->
+                                    ao.getDateLimite()
+                                            .isBefore(today)
+                            )
+
+                            .count();
+
+
+            aoUrgents =
+                    appelDoffresRepository.findAll()
+                            .stream()
+
+                            .filter(ao ->
+                                    ao.getDatePublication() != null
+                            )
+
+                            .filter(ao ->
+                                    !ao.getDatePublication()
+                                            .isBefore(debut)
+                            )
+
+                            .filter(ao ->
+                                    ao.getDatePublication()
+                                            .isBefore(fin)
+                            )
+
+                            .filter(ao ->
+                                    ao.getDateLimite() != null
+                            )
+
+                            .filter(ao ->
+                                    !ao.getDateLimite()
+                                            .isBefore(today)
+                            )
+
+                            .filter(ao ->
+                                    ao.getDateLimite()
+                                            .isBefore(
+                                                    today.plusDays(8)
+                                            )
+                            )
+
+                            .count();
+
+        } else {
+
+            aoEnRetard =
+                    appelDoffresRepository.findAll()
+                            .stream()
+
+                            .filter(ao ->
+                                    ao.getDateLimite() != null
+                                            &&
+                                            ao.getDateLimite()
+                                                    .isBefore(today)
+                            )
+
+                            .count();
+
+
+            aoUrgents =
+                    appelDoffresRepository.findAll()
+                            .stream()
+
+                            .filter(ao ->
+                                    ao.getDateLimite() != null
+                                            &&
+                                            !ao.getDateLimite()
+                                                    .isBefore(today)
+                                            &&
+                                            ao.getDateLimite()
+                                                    .isBefore(
+                                                            today.plusDays(8)
+                                                    )
+                            )
+
+                            .count();
+        }
+
+
+        // =========================================================
+        // DTO
+        // =========================================================
 
         return new DashboardStatsDTO(
+
                 totalClients,
+
                 totalAppelsOffres,
+
                 totalConsultations,
+
                 consultationsRetenues,
+
                 consultationsEnCours,
+
                 consultationsRefusees,
+
                 totalMarches,
+
                 marchesEnCours,
+
                 marchesTermines,
+
                 montantTotalMarches,
+
                 totalCommandes,
+
                 commandesEnCours,
+
                 commandesLivrees,
+
                 montantTotalCommandes,
+
                 totalPaiements,
+
                 paiementsValides,
+
                 paiementsEnAttente,
+
                 paiementsAnnules,
+
                 paiementMoyen,
+
                 chiffreAffaireTotal,
+
                 aoAdjuges,
+
                 tauxReussite,
+
                 aoEnCours,
+
                 aoAnnules,
+
                 montantTotalAO,
+
                 topClient,
+
                 aoEnRetard,
+
                 aoUrgents,
+
                 totalFactures,
+
                 facturesPayees,
+
                 facturesPartiellementPayees,
+
                 facturesEmises,
+
                 montantTotalFacture,
+
                 resteTotalAEncaisser,
+
                 totalEncaisse
         );
     }
