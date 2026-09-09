@@ -1162,16 +1162,54 @@ public class DashboardController {
 
     @GetMapping("/chiffre-affaire-mensuel")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
-    public List<ChiffreAffaireMensuelDTO> getChiffreAffaireMensuel() {
+    public List<ChiffreAffaireMensuelDTO> getChiffreAffaireMensuel(
+            @RequestParam(required = false) Integer annee
+    ) {
+
+        if (annee != null) {
+            return factureRepository
+                    .getChiffreAffaireMensuelHTByAnnee(annee);
+        }
 
         return factureRepository.getChiffreAffaireMensuelHT();
     }
 
     @GetMapping("/top-clients")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
-    public List<TopClientDTO> getTopClients() {
+    public List<TopClientDTO> getTopClients(
+            @RequestParam(required = false) Integer annee,
+            @RequestParam(required = false) Integer mois
+    ) {
 
-        return factureRepository.getTopClientsByChiffreAffaireHT();
+        if (annee == null) {
+            return factureRepository.getTopClientsByChiffreAffaireHT();
+        }
+
+        if (mois != null && (mois < 1 || mois > 12)) {
+            throw new IllegalArgumentException(
+                    "Le mois doit être compris entre 1 et 12"
+            );
+        }
+
+        LocalDate dateDebut;
+        LocalDate dateFin;
+
+        if (mois != null) {
+
+            dateDebut = LocalDate.of(annee, mois, 1);
+            dateFin = dateDebut.plusMonths(1);
+
+        } else {
+
+            dateDebut = LocalDate.of(annee, 1, 1);
+            dateFin = dateDebut.plusYears(1);
+        }
+
+        return factureRepository
+                .getTopClientsByChiffreAffaireHTPeriode(
+                        dateDebut,
+                        dateFin
+                );
     }
 
     @GetMapping("/top-appels-offres")
