@@ -274,4 +274,23 @@ public interface FactureRepository
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin
     );
+
+    @Query("""
+    SELECT COALESCE(SUM(f.montantTTC), 0)
+    FROM Facture f
+    JOIN f.bonLivraison bl
+    JOIN bl.commande c
+    LEFT JOIN c.marche m
+    LEFT JOIN c.consultation cons
+    WHERE COALESCE(m.das, cons.das) = :das
+    AND f.dateFacture >= :dateDebut
+    AND f.dateFacture < :dateFin
+    AND UPPER(f.statut) <> 'ANNULEE'
+    """)
+    Double getMontantTotalByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
 }

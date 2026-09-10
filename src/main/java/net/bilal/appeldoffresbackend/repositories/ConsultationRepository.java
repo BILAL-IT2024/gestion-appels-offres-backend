@@ -70,4 +70,31 @@ public interface ConsultationRepository
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin
     );
+
+    @Query("""
+    SELECT COUNT(c)
+    FROM Consultation c
+    WHERE c.das = :das
+    AND c.dateReception >= :dateDebut
+    AND c.dateReception < :dateFin
+    """)
+    long countByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(c.montantPropose), 0)
+    FROM Consultation c
+    WHERE c.das = :das
+    AND c.dateReception >= :dateDebut
+    AND c.dateReception < :dateFin
+    """)
+    Double getMontantTotalByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
 }

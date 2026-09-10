@@ -1034,67 +1034,226 @@ public class DashboardController {
 
     @GetMapping("/stats-das")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
-    public List<DashboardDasDTO> getStatsParDas() {
+    public List<DashboardDasDTO> getStatsParDas(
+            @RequestParam(required = false) Integer annee,
+            @RequestParam(required = false) Integer mois
+    ) {
+
+        if (mois != null && annee == null) {
+            throw new IllegalArgumentException(
+                    "L'année est obligatoire lorsqu'un mois est sélectionné"
+            );
+        }
+
+        if (mois != null && (mois < 1 || mois > 12)) {
+            throw new IllegalArgumentException(
+                    "Le mois doit être compris entre 1 et 12"
+            );
+        }
+
+        LocalDate dateDebut = null;
+        LocalDate dateFin = null;
+
+        if (annee != null) {
+
+            if (mois != null) {
+                dateDebut = LocalDate.of(annee, mois, 1);
+                dateFin = dateDebut.plusMonths(1);
+            } else {
+                dateDebut = LocalDate.of(annee, 1, 1);
+                dateFin = dateDebut.plusYears(1);
+            }
+        }
+
+        final LocalDate debut = dateDebut;
+        final LocalDate fin = dateFin;
+        final boolean filtrePeriode = annee != null;
 
         return java.util.Arrays.stream(Das.values())
                 .map(das -> {
 
-                    long nombreAppelsOffres =
-                            appelDoffresRepository.countByDas(das);
+                    long nombreAppelsOffres;
+                    double montantAppelsOffres;
 
-                    double montantAppelsOffres =
-                            appelDoffresRepository
-                                    .getMontantTotalByDas(das);
+                    long nombreConsultations;
+                    double montantConsultations;
 
-                    long nombreConsultations =
-                            consultationRepository.countByDas(das);
+                    long nombreOffres;
+                    double montantOffres;
 
-                    double montantConsultations =
-                            consultationRepository
-                                    .getMontantTotalByDas(das);
+                    long nombreMarches;
+                    double montantMarches;
 
-                    long nombreOffres =
-                            offreRepository.countByDas(das);
+                    long nombreOrdresService;
 
-                    double montantOffres =
-                            offreRepository
-                                    .getMontantTotalByDas(das);
+                    long nombreCommandes;
+                    double montantCommandes;
 
-                    long nombreMarches =
-                            marcheRepository.countByDas(das);
+                    double montantFacture;
+                    double montantEncaisse;
+                    double totalPaiementsFacturesPeriode;
 
-                    double montantMarches =
-                            marcheRepository
-                                    .getMontantTotalByDas(das);
+                    if (filtrePeriode) {
 
-                    long nombreOrdresService =
-                            ordreServiceRepository
-                                    .countByMarcheDas(das);
+                        nombreAppelsOffres =
+                                appelDoffresRepository
+                                        .countByDasAndPeriode(
+                                                das, debut, fin
+                                        );
 
-                    long nombreCommandes =
-                            commandeRepository.countByDas(das);
+                        montantAppelsOffres =
+                                appelDoffresRepository
+                                        .getMontantTotalByDasAndPeriode(
+                                                das, debut, fin
+                                        );
 
-                    double montantCommandes =
-                            commandeRepository
-                                    .getMontantTotalByDas(das);
+                        nombreConsultations =
+                                consultationRepository
+                                        .countByDasAndPeriode(
+                                                das, debut, fin
+                                        );
 
-                    double montantFacture =
-                            factureRepository
-                                    .getMontantTotalByDas(das);
+                        montantConsultations =
+                                consultationRepository
+                                        .getMontantTotalByDasAndPeriode(
+                                                das, debut, fin
+                                        );
 
-                    double montantEncaisse =
-                            paiementRepository
-                                    .getMontantEncaisseByDas(das);
+                        nombreOffres =
+                                offreRepository
+                                        .countByDasAndPeriode(
+                                                das, debut, fin
+                                        );
 
-                    double resteAEncaisser =
-                            Math.max(
-                                    montantFacture
-                                            - montantEncaisse,
-                                    0.0
-                            );
+                        montantOffres =
+                                offreRepository
+                                        .getMontantTotalByDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                        nombreMarches =
+                                marcheRepository
+                                        .countByDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                        montantMarches =
+                                marcheRepository
+                                        .getMontantTotalByDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                        nombreOrdresService =
+                                ordreServiceRepository
+                                        .countByMarcheDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                        nombreCommandes =
+                                commandeRepository
+                                        .countByDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                        montantCommandes =
+                                commandeRepository
+                                        .getMontantTotalByDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                        montantFacture =
+                                factureRepository
+                                        .getMontantTotalByDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                        montantEncaisse =
+                                paiementRepository
+                                        .getMontantEncaisseByDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                        totalPaiementsFacturesPeriode =
+                                paiementRepository
+                                        .getTotalPaiementsFacturesByDasAndPeriode(
+                                                das, debut, fin
+                                        );
+
+                    } else {
+
+                        // Ancien comportement global
+                        nombreAppelsOffres =
+                                appelDoffresRepository.countByDas(das);
+
+                        montantAppelsOffres =
+                                appelDoffresRepository
+                                        .getMontantTotalByDas(das);
+
+                        nombreConsultations =
+                                consultationRepository.countByDas(das);
+
+                        montantConsultations =
+                                consultationRepository
+                                        .getMontantTotalByDas(das);
+
+                        nombreOffres =
+                                offreRepository.countByDas(das);
+
+                        montantOffres =
+                                offreRepository
+                                        .getMontantTotalByDas(das);
+
+                        nombreMarches =
+                                marcheRepository.countByDas(das);
+
+                        montantMarches =
+                                marcheRepository
+                                        .getMontantTotalByDas(das);
+
+                        nombreOrdresService =
+                                ordreServiceRepository
+                                        .countByMarcheDas(das);
+
+                        nombreCommandes =
+                                commandeRepository.countByDas(das);
+
+                        montantCommandes =
+                                commandeRepository
+                                        .getMontantTotalByDas(das);
+
+                        montantFacture =
+                                factureRepository
+                                        .getMontantTotalByDas(das);
+
+                        montantEncaisse =
+                                paiementRepository
+                                        .getMontantEncaisseByDas(das);
+
+                        totalPaiementsFacturesPeriode = montantEncaisse;
+                    }
+
+                    double resteAEncaisser;
+
+                    if (filtrePeriode) {
+                        resteAEncaisser =
+                                Math.max(
+                                        montantFacture
+                                                - totalPaiementsFacturesPeriode,
+                                        0.0
+                                );
+                    } else {
+                        resteAEncaisser =
+                                Math.max(
+                                        montantFacture
+                                                - montantEncaisse,
+                                        0.0
+                                );
+                    }
 
                     resteAEncaisser =
-                            Math.round(resteAEncaisser * 100.0) / 100.0;
+                            Math.round(
+                                    resteAEncaisser * 100.0
+                            ) / 100.0;
 
                     return new DashboardDasDTO(
                             das.name(),

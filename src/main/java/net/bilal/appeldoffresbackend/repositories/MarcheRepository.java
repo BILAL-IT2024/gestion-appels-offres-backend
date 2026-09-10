@@ -76,4 +76,31 @@ public interface MarcheRepository extends JpaRepository<Marche, Long> {
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin
     );
+
+    @Query("""
+    SELECT COUNT(m)
+    FROM Marche m
+    WHERE m.das = :das
+    AND m.dateDebut >= :dateDebut
+    AND m.dateDebut < :dateFin
+    """)
+    long countByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(m.montantMarche), 0)
+    FROM Marche m
+    WHERE m.das = :das
+    AND m.dateDebut >= :dateDebut
+    AND m.dateDebut < :dateFin
+    """)
+    Double getMontantTotalByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
 }

@@ -108,4 +108,35 @@ public interface CommandeRepository extends JpaRepository<Commande, Long> {
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin
     );
+
+    @Query("""
+    SELECT COUNT(c)
+    FROM Commande c
+    LEFT JOIN c.marche m
+    LEFT JOIN c.consultation cons
+    WHERE COALESCE(m.das, cons.das) = :das
+    AND c.dateCommande >= :dateDebut
+    AND c.dateCommande < :dateFin
+    """)
+    long countByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(c.montantCommande), 0)
+    FROM Commande c
+    LEFT JOIN c.marche m
+    LEFT JOIN c.consultation cons
+    WHERE COALESCE(m.das, cons.das) = :das
+    AND c.dateCommande >= :dateDebut
+    AND c.dateCommande < :dateFin
+    """)
+    Double getMontantTotalByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
 }

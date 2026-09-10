@@ -198,4 +198,43 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin
     );
+
+    @Query("""
+    SELECT COALESCE(SUM(p.montantPaiement), 0)
+    FROM Paiement p
+    JOIN p.facture f
+    JOIN f.bonLivraison bl
+    JOIN bl.commande c
+    LEFT JOIN c.marche m
+    LEFT JOIN c.consultation cons
+    WHERE COALESCE(m.das, cons.das) = :das
+    AND p.datePaiement >= :dateDebut
+    AND p.datePaiement < :dateFin
+    AND UPPER(p.statut) = 'VALIDE'
+    """)
+    Double getMontantEncaisseByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(p.montantPaiement), 0)
+    FROM Paiement p
+    JOIN p.facture f
+    JOIN f.bonLivraison bl
+    JOIN bl.commande c
+    LEFT JOIN c.marche m
+    LEFT JOIN c.consultation cons
+    WHERE COALESCE(m.das, cons.das) = :das
+    AND f.dateFacture >= :dateDebut
+    AND f.dateFacture < :dateFin
+    AND UPPER(p.statut) = 'VALIDE'
+    """)
+    Double getTotalPaiementsFacturesByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
 }

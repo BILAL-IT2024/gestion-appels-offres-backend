@@ -113,4 +113,31 @@ public interface AppelDoffresRepository
             @Param("dateDebut") LocalDate dateDebut,
             @Param("dateFin") LocalDate dateFin
     );
+
+    @Query("""
+    SELECT COUNT(a)
+    FROM AppelDoffres a
+    WHERE a.das = :das
+    AND a.datePublication >= :dateDebut
+    AND a.datePublication < :dateFin
+    """)
+    long countByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(a.montantEstime), 0)
+    FROM AppelDoffres a
+    WHERE a.das = :das
+    AND a.datePublication >= :dateDebut
+    AND a.datePublication < :dateFin
+    """)
+    Double getMontantTotalByDasAndPeriode(
+            @Param("das") Das das,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin
+    );
+
 }
