@@ -293,4 +293,14 @@ public interface FactureRepository
             @Param("dateFin") LocalDate dateFin
     );
 
+    @Query("""
+    SELECT YEAR(f.dateFacture), COALESCE(SUM(f.montantHT), 0)
+    FROM Facture f
+    WHERE UPPER(f.statut) <> 'ANNULEE'
+    GROUP BY YEAR(f.dateFacture)
+    ORDER BY YEAR(f.dateFacture)
+    """)
+    List<Object[]> getChiffreAffaireHTParAnnee();
+
+
 }

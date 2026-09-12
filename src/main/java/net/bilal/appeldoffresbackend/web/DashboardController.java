@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -1380,4 +1381,21 @@ public class DashboardController {
                         PageRequest.of(0, 5)
                 );
     }
+
+    @GetMapping("/chiffre-affaire-annuel")
+    public List<Map<String, Object>> getChiffreAffaireAnnuel() {
+
+        List<Object[]> resultats =
+                factureRepository.getChiffreAffaireHTParAnnee();
+
+        return resultats.stream()
+                .map(row -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("annee", row[0]);
+                    item.put("total", row[1]);
+                    return item;
+                })
+                .toList();
+    }
+
 }
